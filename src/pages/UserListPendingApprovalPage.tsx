@@ -1,5 +1,6 @@
 import React from 'react';
 import { Eye, FileText, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
+import Pagination from '../components/common/Pagination';
 
 const UserListPendingApprovalPage: React.FC = () => {
   const users = [
@@ -18,7 +19,7 @@ const UserListPendingApprovalPage: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mb-6 overflow-hidden border border-gray-100">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-[15px] font-medium text-gray-800">Search Filters</h2>
-          <div className="text-gray-400 text-xs">User In Approval</div>
+  
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
@@ -121,7 +122,7 @@ const UserListPendingApprovalPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, idx) => (
+              {users.map((user) => (
                 <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-3 py-4 text-gray-500 text-center">{user.id}</td>
                   <td className="px-3 py-4 text-gray-700">{user.firstName}</td>
@@ -177,6 +178,7 @@ const UserListPendingApprovalPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination />
       </div>
     </div>
   );

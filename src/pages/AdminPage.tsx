@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, ChevronRight, Search } from 'lucide-react';
+import { Eye, Edit, Trash2, Search } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

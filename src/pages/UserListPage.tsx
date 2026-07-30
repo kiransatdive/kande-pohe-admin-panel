@@ -1,5 +1,7 @@
 import React from 'react';
 import { Eye, Edit, Image as ImageIcon, Check, Trash2, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import Pagination from '../components/common/Pagination';
 
 const UserListPage: React.FC = () => {
   const users = [
@@ -25,13 +27,21 @@ const UserListPage: React.FC = () => {
               Showing 1-20 of <span className="font-semibold text-gray-800">4,828</span> items.
             </div>
           </div>
-          <div className="relative hidden sm:block">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Type to search..." 
-              className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-            />
+          <div className="flex items-center gap-4">
+            <div className="relative hidden sm:block">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Type to search..." 
+                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+              />
+            </div>
+            <Link 
+              to="/user-list-newly-registered" 
+              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+            >
+              Newly Register
+            </Link>
           </div>
         </div>
 
@@ -52,7 +62,7 @@ const UserListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, idx) => (
+              {users.map((user) => (
                 <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
                   <td className="px-4 py-3 text-gray-500">{user.id}</td>
                   <td className="px-4 py-3 text-gray-700">{user.firstName}</td>
@@ -90,6 +100,7 @@ const UserListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination />
       </div>
     </div>
   );

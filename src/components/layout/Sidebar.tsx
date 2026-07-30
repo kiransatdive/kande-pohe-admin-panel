@@ -23,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   };
 
   return (
-    <aside className={`${isOpen ? 'w-64' : 'w-[72px]'} flex-shrink-0 bg-slate-900 text-slate-400 flex flex-col h-screen overflow-y-auto overflow-x-hidden no-scrollbar font-sans transition-all duration-300 ease-in-out`}>
+    <aside className={`${isOpen ? 'w-[320px]' : 'w-[72px]'} flex-shrink-0 bg-slate-900 text-slate-400 flex flex-col h-screen overflow-y-auto overflow-x-hidden no-scrollbar font-sans transition-all duration-300 ease-in-out`}>
       {/* Logo Area */}
       <div className={`h-16 flex items-center justify-center pt-4 pb-2 ${isOpen ? 'px-6' : 'px-2'}`}>
         <img src={logo} alt="Logo" className={`w-auto object-contain transition-all duration-300 ${isOpen ? 'h-12' : 'h-8'}`} />
@@ -93,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                     {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
                     <div className="flex items-center gap-3 pl-7">
                       <List className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
-                      <span className={isActive ? 'font-semibold' : ''}>User List(All)</span>
+                      <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>User List(All)</span>
                     </div>
                   </>
                 )}
@@ -107,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                     {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
                     <div className="flex items-center gap-3 pl-7">
                       <CheckCircle className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
-                      <span className={isActive ? 'font-semibold' : ''}>User List(Approved)</span>
+                      <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>User List(Approved)</span>
                     </div>
                   </>
                 )}
@@ -121,28 +121,52 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                     {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
                     <div className="flex items-center gap-3 pl-7">
                       <LayoutList className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
-                      <span className={isActive ? 'font-semibold' : ''}>User List(in Pending Approval)</span>
+                      <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>User List(in Pending Approval)</span>
                     </div>
                   </>
                 )}
               </NavLink>
-               <NavLink to="/admin/crypto" className="flex items-center px-2 py-2 pl-9 text-sm hover:text-white transition-colors">
-                <div className="flex items-center gap-3">
-                  <LayoutList className="w-4 h-4" />
-                  <span>User List(Newly Register)</span>
-                </div>
+              <NavLink 
+                to="/user-list-newly-registered" 
+                className={({ isActive }) => `flex items-center px-2 py-2.5 text-sm rounded relative group transition-colors ${isActive ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+                    <div className="flex items-center gap-3 pl-7">
+                      <LayoutList className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                      <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>User List(Newly Register)</span>
+                    </div>
+                  </>
+                )}
               </NavLink>
-               <NavLink to="/admin/crypto" className="flex items-center px-2 py-2 pl-9 text-sm hover:text-white transition-colors">
-                <div className="flex items-center gap-3">
-                  <FileCode className="w-4 h-4" />
-                  <span>User List(in Bio)</span>
-                </div>
+              <NavLink 
+                to="/user-list-bio" 
+                className={({ isActive }) => `flex items-center px-2 py-2.5 text-sm rounded relative group transition-colors ${isActive ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+                    <div className="flex items-center gap-3 pl-7">
+                      <FileCode className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                      <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>User List(in Bio)</span>
+                    </div>
+                  </>
+                )}
               </NavLink>
-               <NavLink to="/admin/crypto" className="flex items-center px-2 py-2 pl-9 text-sm hover:text-white transition-colors">
-                <div className="flex items-center gap-3">
-                  <FileCode className="w-4 h-4" />
-                  <span>User List(Photo Album)</span>
-                </div>
+              <NavLink 
+                to="/user-list-photo-album" 
+                className={({ isActive }) => `flex items-center px-2 py-2.5 text-sm rounded relative group transition-colors ${isActive ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+                    <div className="flex items-center gap-3 pl-7">
+                      <FileCode className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                      <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>User List(Photo Album)</span>
+                    </div>
+                  </>
+                )}
               </NavLink>
             </div>
           )}
@@ -179,11 +203,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                 { name: 'Education Level', icon: Link2 },
                 { name: 'Religion', icon: Landmark },
               ].map((item) => (
-                <NavLink key={item.name} to={`/admin/site-manage/${item.name.toLowerCase().replace(/ /g, '-')}`} className="flex items-center px-2 py-2 pl-9 text-sm text-slate-400 hover:text-white transition-colors">
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </div>
+                <NavLink 
+                  key={item.name} 
+                  to={`/admin/site-manage/${item.name.toLowerCase().replace(/ /g, '-')}`} 
+                  className={({ isActive }) => `flex items-center px-2 py-2.5 text-sm rounded relative group transition-colors ${isActive ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+                      <div className="flex items-center gap-3 pl-7">
+                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                        <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>{item.name}</span>
+                      </div>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
@@ -233,11 +266,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                 { name: 'Working With', icon: Hourglass },
                 { name: 'Working As', icon: Hourglass },
               ].map((item) => (
-                <NavLink key={item.name} to={`/admin/site-manage-two/${item.name.toLowerCase().replace(/ /g, '-')}`} className="flex items-center px-2 py-2 pl-9 text-sm text-slate-400 hover:text-white transition-colors">
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </div>
+                <NavLink 
+                  key={item.name} 
+                  to={`/admin/site-manage-two/${item.name.toLowerCase().replace(/ /g, '-')}`} 
+                  className={({ isActive }) => `flex items-center px-2 py-2.5 text-sm rounded relative group transition-colors ${isActive ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+                      <div className="flex items-center gap-3 pl-7">
+                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                        <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>{item.name}</span>
+                      </div>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
@@ -271,11 +313,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                 { name: 'Marital Status', icon: Mail },
                 { name: 'Other Meta Management', icon: Mail },
               ].map((item) => (
-                <NavLink key={item.name} to={`/admin/cms/${item.name.toLowerCase().replace(/ /g, '-')}`} className="flex items-center px-2 py-2 pl-9 text-sm text-slate-400 hover:text-white transition-colors">
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </div>
+                <NavLink 
+                  key={item.name} 
+                  to={`/admin/cms/${item.name.toLowerCase().replace(/ /g, '-')}`} 
+                  className={({ isActive }) => `flex items-center px-2 py-2.5 text-sm rounded relative group transition-colors ${isActive ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+                      <div className="flex items-center gap-3 pl-7">
+                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                        <span className={`whitespace-nowrap ${isActive ? 'font-semibold' : ''}`}>{item.name}</span>
+                      </div>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
