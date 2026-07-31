@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 
 const AdminLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  if (!localStorage.getItem('isAuthenticated')) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">

@@ -57,8 +57,13 @@ import PhysicalStatusListPage from '../pages/PhysicalStatusListPage';
 import OtherMetaManagementListPage from '../pages/OtherMetaManagementListPage';
 import SiteCmsListPage from '../pages/SiteCmsListPage';
 import SubscriptionManagementListPage from '../pages/SubscriptionManagementListPage';
+import LoginPage from '../pages/LoginPage';
 
 const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />
+  },
   {
     path: '/',
     element: <AdminLayout />,

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Marathi&family=Kalam:wght@400;700&display=swap');
 
 @theme {
   --color-primary: #3c8dbc;
@@ -6,6 +7,9 @@
   --color-tertiary: #367fa9;
   --color-quaternary: #1e282c;
   --color-sidebar-dark: #2c3b41;
+  
+  --font-marathi: 'Tiro Devanagari Marathi', serif;
+  --font-marathi-hand: 'Kalam', cursive;
   
   --color-text-body: #30373B;
   --color-text-dark: #5F5F5F;

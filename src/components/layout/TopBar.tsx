@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, Bell, MessageSquare, FileText, PiggyBank, Coins, TrendingUp, Paperclip, Star, CalendarDays
 } from 'lucide-react';
@@ -132,9 +132,40 @@ interface TopBarProps {
 
 const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMessageOpen, setIsMessageOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get admin data from localStorage
+  const adminDataString = localStorage.getItem('adminData');
+  const adminData = adminDataString ? JSON.parse(adminDataString) : null;
+  const adminName = adminData ? `${adminData.firstName} ${adminData.lastName}` : 'Admin User';
+  const adminRole = adminData?.role || 'Administrator';
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('adminData');
+    navigate('/login');
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+        setIsMessageOpen(false);
+        setIsProfilePopupOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const getPageTitle = (pathname: string) => {
     if (pathname === '/') return 'Dashboard';
@@ -186,7 +217,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
         </h1>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-5 text-gray-500">
+      <div className="flex items-center gap-3 md:gap-5 text-gray-500" ref={dropdownRef}>
         {/* Notifications */}
         <div className="relative">
           <button 
@@ -318,24 +349,22 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
             <div className="relative">
               <img 
                 src="https://i.pravatar.cc/150?img=11" 
-                alt="Charles Hall" 
+                alt={adminName}
                 className="w-9 h-9 rounded-full border border-gray-200 object-cover"
               />
               <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <span className="text-[13px] text-green-600 font-medium tracking-wide hidden sm:inline-block">Online</span>
+            <span className="text-[13px] text-gray-700 font-semibold tracking-wide hidden sm:inline-block">{adminName}</span>
           </button>
 
           {isProfilePopupOpen && (
             <div className="absolute right-0 top-12 w-48 bg-white border border-gray-200 rounded-lg shadow-xl py-4 px-4 z-50 text-left">
               <div className="flex flex-col">
-                <span className="text-sm text-gray-900 font-medium">Charles Hall</span>
-                <span className="text-xs text-gray-500 mt-0.5">Designer</span>
+                <span className="text-sm text-gray-900 font-medium">{adminName}</span>
+                <span className="text-xs text-gray-500 mt-0.5">{adminRole}</span>
                 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2.5">
-                  <a href="#" className="text-xs text-gray-600 hover:text-blue-600 transition-colors">View Profile</a>
-                  <a href="#" className="text-xs text-gray-600 hover:text-blue-600 transition-colors">Settings</a>
-                  <a href="#" className="text-xs text-red-500 hover:text-red-600 transition-colors">Sign Out</a>
+                  <button onClick={handleLogout} className="text-left text-xs text-red-500 hover:text-red-600 transition-colors">Sign Out</button>
                 </div>
               </div>
             </div>
