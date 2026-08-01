@@ -27,6 +27,13 @@ const WeightegeListPage: React.FC = () => {
   const [viewingWeightege, setViewingWeightege] = useState<Weightege | null>(null);
   const [isViewingLoading, setIsViewingLoading] = useState(false);
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingWeightegeId, setEditingWeightegeId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPercent, setEditPercent] = useState('');
+  const [isEditingLoading, setIsEditingLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const fetchWeighteges = async () => {
     setIsLoading(true);
     setError('');
@@ -94,6 +101,73 @@ const WeightegeListPage: React.FC = () => {
   const handleDeleteClick = (id: number) => {
     setWeightegeToDelete(id);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleEditClick = async (id: number) => {
+    setIsEditModalOpen(true);
+    setIsEditingLoading(true);
+    setEditingWeightegeId(id);
+    setEditName('');
+    setEditPercent('');
+    try {
+      const response = await apiClient.get(`v1/admin/master/wightege/${id}`, {
+        headers: {
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+      if (response.data.success) {
+        const itemData = Array.isArray(response.data.data) ? response.data.data[0] : response.data.data;
+        setEditName(itemData.vWightegeName || '');
+        setEditPercent(itemData.vWightegePercent?.toString() || '');
+      } else {
+        alert(response.data.message || 'Failed to fetch weightege details');
+        setIsEditModalOpen(false);
+      }
+    } catch (err: any) {
+      console.error('Error fetching weightege details:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to fetch details');
+      setIsEditModalOpen(false);
+    } finally {
+      setIsEditingLoading(false);
+    }
+  };
+
+  const handleUpdateWeightege = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim() || !editPercent.toString().trim() || !editingWeightegeId) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      const response = await apiClient.put(`v1/admin/master/wightege/${editingWeightegeId}`, 
+        {
+          vWightegeName: editName,
+          vWightegePercent: editPercent
+        },
+        {
+          headers: {
+            'bypass-tunnel-reminder': 'true'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setIsEditModalOpen(false);
+        setEditingWeightegeId(null);
+        setEditName('');
+        setEditPercent('');
+        fetchWeighteges(); // Refresh the list
+      } else {
+        alert(response.data.message || 'Failed to update weightege');
+      }
+    } catch (err: any) {
+      console.error('Error updating weightege:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to update weightege');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleViewClick = async (id: number) => {
@@ -219,7 +293,11 @@ const WeightegeListPage: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Edit">
+                        <button 
+                          onClick={() => handleEditClick(item.iWightege)}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="Edit"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button 
@@ -343,6 +421,84 @@ const WeightegeListPage: React.FC = () => {
         </div>
       )}
       
+      {/* Edit Modal Popup */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-[15px] font-medium text-gray-800">Edit Weightege</h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              {isEditingLoading ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
+                  <p className="text-sm text-gray-500">Loading details...</p>
+                </div>
+              ) : (
+                <form onSubmit={handleUpdateWeightege}>
+                  <div className="mb-6">
+                    <label htmlFor="editStepName" className="block text-sm font-bold text-slate-700 mb-2">
+                      Step Name
+                    </label>
+                    <input
+                      type="text"
+                      id="editStepName"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                      className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div className="mb-8">
+                    <label htmlFor="editWightegePercent" className="block text-sm font-bold text-slate-700 mb-2">
+                      Wightege In Percent
+                    </label>
+                    <input
+                      type="number"
+                      id="editWightegePercent"
+                      value={editPercent}
+                      onChange={(e) => setEditPercent(e.target.value)}
+                      required
+                      className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 justify-end border-t border-gray-50 pt-4 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(false)}
+                      disabled={isUpdating}
+                      className="bg-gray-100 text-gray-600 px-6 py-2.5 rounded font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isUpdating}
+                      className="bg-[#3b82f6] text-white px-6 py-2.5 rounded font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        'Update'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* View Modal Popup */}
       {isViewModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

@@ -12,11 +12,9 @@ import WeightegeListPage from '../pages/WeightegeListPage';
 import CommunityListPage from '../pages/CommunityListPage';
 import SubCommunityListPage from '../pages/SubCommunityListPage';
 import DietListPage from '../pages/DietListPage';
-import DistrictListPage from '../pages/DistrictListPage';
 import GotraListPage from '../pages/GotraListPage';
 import MaritalStatusListPage from '../pages/MaritalStatusListPage';
 import HeightListPage from '../pages/HeightListPage';
-import TalukaListPage from '../pages/TalukaListPage';
 import FatherMotherStatusListPage from '../pages/FatherMotherStatusListPage';
 import EducationNameListPage from '../pages/EducationNameListPage';
 import EducationLevelListPage from '../pages/EducationLevelListPage';
@@ -113,20 +111,12 @@ const router = createBrowserRouter([
         element: <DietListPage />
       },
       {
-        path: 'admin/site-manage/district',
-        element: <DistrictListPage />
-      },
-      {
         path: 'admin/site-manage/marital-status',
         element: <MaritalStatusListPage />
       },
       {
         path: 'admin/site-manage/height',
         element: <HeightListPage />
-      },
-      {
-        path: 'admin/site-manage/taluka',
-        element: <TalukaListPage />
       },
       {
         path: 'admin/site-manage/father-mother-status',

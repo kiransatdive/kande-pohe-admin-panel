@@ -1,86 +1,205 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Search, Plus} from 'lucide-react';
+import { Eye, Edit, Trash2, Plus, Check, Star, Megaphone } from 'lucide-react';
 
 const SubscriptionManagementListPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const items = [
-    { id: 1, name: 'FREE', price: '₹0.00', profileDuration: '365 Days', validity: '30 Days' },
-    { id: 2, name: 'SILVER', price: '₹1,200.00', profileDuration: '365 Days', validity: '90 Days' },
-    { id: 3, name: 'GOLD', price: '₹1,800.00', profileDuration: '365 Days', validity: '180 Days' },
-    { id: 4, name: 'PLATINUM', price: '₹2,400.00', profileDuration: '365 Days', validity: '365 Days' },
+    { 
+      id: 1, 
+      name: 'Free', 
+      price: '₹0', 
+      profileDuration: '365 Days', 
+      validity: '30 Days',
+      theme: 'dark',
+      features: [
+        'Profile Duration: 365 Days',
+        'Validity: 30 Days',
+        'Basic Contacts access',
+        'Standard Privacy settings',
+      ]
+    },
+    { 
+      id: 2, 
+      name: 'Silver', 
+      price: '₹1,200', 
+      profileDuration: '365 Days', 
+      validity: '90 Days',
+      theme: 'light-yellow',
+      features: [
+        'Profile Duration: 365 Days',
+        'Validity: 90 Days',
+        'Extended Contacts access',
+        'Enhanced Privacy features',
+        'Email Support included'
+      ]
+    },
+    { 
+      id: 3, 
+      name: 'Gold', 
+      price: '₹1,800', 
+      profileDuration: '365 Days', 
+      validity: '180 Days',
+      theme: 'blue',
+      isPopular: true,
+      features: [
+        'Profile Duration: 365 Days',
+        'Validity: 180 Days',
+        'Premium Contacts access',
+        'Advanced Privacy settings',
+        '24/7 Priority Support',
+        'Personalized Messaging'
+      ]
+    },
+    { 
+      id: 4, 
+      name: 'Platinum', 
+      price: '₹2,400', 
+      profileDuration: '365 Days', 
+      validity: '365 Days',
+      theme: 'light-red',
+      features: [
+        'Profile Duration: 365 Days',
+        'Validity: 365 Days',
+        'Unlimited Contacts',
+        'Maximum Privacy controls',
+        'Dedicated RM assigned',
+        'Unlimited Messaging'
+      ]
+    },
   ];
+
+  const getThemeClasses = (theme: string) => {
+    switch(theme) {
+      case 'dark':
+        return {
+          cardBg: 'bg-[#333f51]',
+          title: 'text-white',
+          subtitle: 'text-gray-300',
+          price: 'text-white',
+          buttonBg: 'bg-white',
+          buttonText: 'text-[#3b82f6]',
+          buttonHover: 'hover:bg-gray-100',
+          checkIcon: 'text-[#3b82f6]',
+          listItem: 'text-gray-300'
+        };
+      case 'blue':
+        return {
+          cardBg: 'bg-[#3b82f6]',
+          title: 'text-white',
+          subtitle: 'text-blue-100',
+          price: 'text-white',
+          buttonBg: 'bg-white',
+          buttonText: 'text-[#3b82f6]',
+          buttonHover: 'hover:bg-gray-100',
+          checkIcon: 'text-white',
+          listItem: 'text-blue-100'
+        };
+      case 'light-yellow':
+        return {
+          cardBg: 'bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100',
+          title: 'text-[#fbbf24]',
+          subtitle: 'text-gray-500',
+          price: 'text-gray-800',
+          buttonBg: 'bg-white border border-gray-300',
+          buttonText: 'text-gray-800',
+          buttonHover: 'hover:bg-gray-50',
+          checkIcon: 'text-[#3b82f6]',
+          listItem: 'text-gray-500'
+        };
+      case 'light-red':
+      default:
+        return {
+          cardBg: 'bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100',
+          title: 'text-[#ef4444]',
+          subtitle: 'text-gray-500',
+          price: 'text-gray-800',
+          buttonBg: 'bg-white border border-gray-300',
+          buttonText: 'text-gray-800',
+          buttonHover: 'hover:bg-gray-50',
+          checkIcon: 'text-[#3b82f6]',
+          listItem: 'text-gray-500'
+        };
+    }
+  };
 
   return (
     <div className="flex flex-col text-sm w-full relative">
-      {/* Main Card */}
-      <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mb-6 overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-[15px] font-medium text-gray-800">Subscriptions</h2>
-            <div className="text-xs text-gray-500">
-              Showing 1-4 of <span className="font-semibold text-gray-800">4</span> items.
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Type to search..." 
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-              />
-            </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-[#00b562] hover:bg-[#009b54] text-white px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Create Subscriptions
-            </button>
-          </div>
+      {/* Header Actions */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Subscription Plans</h2>
+          <p className="text-gray-500 mt-1">Manage and view your pricing tiers</p>
         </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-[#00b562] hover:bg-[#009b54] text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-sm"
+        >
+          <Plus className="w-5 h-5" />
+          Create Subscription
+        </button>
+      </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto p-4">
-          <table className="w-full text-left text-xs border border-gray-100 table-fixed">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="px-4 py-3 font-semibold text-[#1e40af] w-12">#</th>
-                <th className="px-4 py-3 font-semibold text-[#1e40af]">Subscriptions Name</th>
-                <th className="px-4 py-3 font-semibold text-[#1e40af]">Subscriptions Price</th>
-                <th className="px-4 py-3 font-semibold text-[#1e40af]">Profile Duration</th>
-                <th className="px-4 py-3 font-semibold text-[#1e40af]">Validity Of Package</th>
-                <th className="px-4 py-3 font-semibold text-[#1e40af] text-right w-28"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
-                  <td className="px-4 py-3 text-gray-500 align-top">{item.id}</td>
-                  <td className="px-4 py-3 text-gray-700 align-top font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-gray-700 align-top">{item.price}</td>
-                  <td className="px-4 py-3 text-gray-600 align-top">{item.profileDuration}</td>
-                  <td className="px-4 py-3 text-gray-600 align-top">{item.validity}</td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-center justify-end gap-1.5 text-gray-400">
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Pricing Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-center px-2 py-4">
+        {items.map((item) => {
+          const styles = getThemeClasses(item.theme);
+          return (
+            <div 
+              key={item.id} 
+              className={`relative rounded-[2rem] ${styles.cardBg} flex flex-col p-8 transition-transform hover:-translate-y-2 duration-300 ${item.isPopular ? 'py-12 shadow-2xl z-10 scale-105' : ''}`}
+            >
+              {item.isPopular && (
+                <div className="absolute -top-4 -right-4 w-12 h-12 bg-[#fbbf24] rounded-xl flex items-center justify-center transform rotate-12 shadow-lg z-20">
+                  <Star className="w-7 h-7 text-white fill-white" />
+                </div>
+              )}
+              
+              <div className="text-center mb-6">
+                <h3 className={`text-2xl font-bold mb-2 ${styles.title}`}>{item.name}</h3>
+                
+                {item.theme === 'dark' ? (
+                  <div className="flex flex-col items-center justify-center mt-4">
+                    <Megaphone className="w-10 h-10 text-white mb-2" />
+                    <div className={`text-sm ${styles.subtitle}`}>for individuals</div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center mt-4">
+                    <span className={`text-4xl font-bold ${styles.price}`}>{item.price}</span>
+                    <div className={`text-sm mt-1 ${styles.subtitle}`}>per user / month</div>
+                  </div>
+                )}
+              </div>
+
+              <button className={`w-full py-3.5 rounded-xl font-bold text-[15px] mb-8 transition-colors ${styles.buttonBg} ${styles.buttonText} ${styles.buttonHover}`}>
+                Get started
+              </button>
+
+              <div className="flex-1">
+                <ul className="flex flex-col gap-4">
+                  {item.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <Check className={`w-5 h-5 shrink-0 ${styles.checkIcon}`} strokeWidth={3} />
+                      <span className={`text-[13px] leading-tight ${styles.listItem}`}>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* Admin Actions */}
+              <div className="mt-8 pt-5 border-t border-gray-200/20 flex items-center justify-center gap-3">
+                 <button className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors border ${item.theme === 'light-yellow' || item.theme === 'light-red' ? 'border-gray-200 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600' : 'border-white/20 text-white/80 hover:bg-white/10 hover:border-white/40 hover:text-white'}`}>
+                   <Edit className="w-3.5 h-3.5" />
+                   Update
+                 </button>
+                 <button className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors border ${item.theme === 'light-yellow' || item.theme === 'light-red' ? 'border-gray-200 text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600' : 'border-white/20 text-white/80 hover:bg-white/10 hover:border-white/40 hover:text-red-200'}`}>
+                   <Trash2 className="w-3.5 h-3.5" />
+                   Delete
+                 </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Popup Modal */}

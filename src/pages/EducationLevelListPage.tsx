@@ -1,21 +1,157 @@
-import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Edit, Trash2, Search, Loader2, AlertTriangle } from 'lucide-react';
+import apiClient from '../services/apiClient';
+import Pagination from '../components/common/Pagination';
+
+interface EducationLevel {
+  iEducationLevelID: number;
+  vEducationLevelName: string;
+  status: string;
+}
 
 const EducationLevelListPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newStatus, setNewStatus] = useState('Active');
+  
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [fieldToEdit, setFieldToEdit] = useState<EducationLevel | null>(null);
 
-  const items = [
-    { id: 1, name: 'Bachelors', status: 'Active' },
-    { id: 2, name: 'Masters', status: 'Active' },
-    { id: 3, name: 'Doctorate', status: 'Active' },
-    { id: 4, name: 'Diploma', status: 'Active' },
-    { id: 5, name: 'Undergraduate', status: 'Active' },
-    { id: 6, name: 'Associates degree', status: 'Active' },
-    { id: 7, name: 'Honours degree', status: 'Active' },
-    { id: 8, name: 'Trade school', status: 'Active' },
-    { id: 9, name: 'High school', status: 'Active' },
-    { id: 10, name: 'Less than high school', status: 'Active' },
-  ];
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [fieldToView, setFieldToView] = useState<EducationLevel | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [fieldToDelete, setFieldToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const [fields, setFields] = useState<EducationLevel[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
+
+  const fetchFields = async (page: number) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await apiClient.get(`v1/admin/master/education-level?page=${page}&limit=${limit}`);
+      if (response.data.success) {
+        setFields(response.data.data);
+        setTotalItems(response.data.meta?.total || response.data.data.length);
+        setTotalPages(response.data.meta?.totalPages || 1);
+        setCurrentPage(response.data.meta?.page || page);
+      } else {
+        setError(response.data.message || 'Failed to fetch education level data');
+      }
+    } catch (err: any) {
+      console.error('Error fetching education level data:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFields(currentPage);
+  }, [currentPage]);
+
+  const filteredFields = fields.filter((item) => {
+    const term = searchTerm.toLowerCase();
+    // Use optional chaining or fallback to empty string in case of missing keys
+    const id = item.iEducationLevelID ? item.iEducationLevelID.toString() : '';
+    const name = item.vEducationLevelName ? item.vEducationLevelName.toLowerCase() : '';
+    const statusStr = item.status ? item.status.toLowerCase() : '';
+    
+    return id.includes(term) || name.includes(term) || statusStr.includes(term);
+  });
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) {
+      setCreateError('Name is required');
+      return;
+    }
+    
+    setIsCreating(true);
+    setCreateError('');
+    try {
+      let response;
+      if (fieldToEdit) {
+        response = await apiClient.put(`v1/admin/master/education-level/${fieldToEdit.iEducationLevelID}`, {
+          vEducationLevelName: newName.trim(),
+          status: newStatus
+        });
+      } else {
+        response = await apiClient.post('v1/admin/master/education-level', {
+          vEducationLevelName: newName.trim(),
+          status: newStatus
+        });
+      }
+      
+      if (response.data.success) {
+        setIsModalOpen(false);
+        setNewName('');
+        setNewStatus('Active');
+        setFieldToEdit(null);
+        fetchFields(currentPage); // Refresh list
+      } else {
+        setCreateError(response.data.message || `Failed to ${fieldToEdit ? 'update' : 'create'}`);
+      }
+    } catch (err: any) {
+      console.error(`Error ${fieldToEdit ? 'updating' : 'creating'}:`, err);
+      setCreateError(err.response?.data?.message || err.message || 'An error occurred');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const openEditModal = (field: EducationLevel) => {
+    setFieldToEdit(field);
+    setNewName(field.vEducationLevelName);
+    setNewStatus(field.status || 'Active');
+    setCreateError('');
+    setIsModalOpen(true);
+  };
+
+  const openDeleteModal = (id: number) => {
+    setFieldToDelete(id);
+    setDeleteError('');
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (fieldToDelete === null) return;
+    
+    setIsDeleting(true);
+    setDeleteError('');
+    
+    try {
+      const response = await apiClient.delete(`v1/admin/master/education-level/${fieldToDelete}`);
+      if (response.data.success) {
+        setIsDeleteModalOpen(false);
+        setFieldToDelete(null);
+        fetchFields(currentPage);
+      } else {
+        setDeleteError(response.data.message || 'Failed to delete');
+      }
+    } catch (err: any) {
+      console.error('Error deleting:', err);
+      setDeleteError(err.response?.data?.message || err.message || 'An error occurred');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const openViewModal = (field: EducationLevel) => {
+    setFieldToView(field);
+    setIsViewModalOpen(true);
+  };
 
   return (
     <div className="flex flex-col text-sm w-full relative">
@@ -26,7 +162,7 @@ const EducationLevelListPage: React.FC = () => {
           <div className="flex flex-col gap-2">
             <h2 className="text-[15px] font-medium text-gray-800">Education Level List</h2>
             <div className="text-xs text-gray-500">
-              Showing 1-10 of <span className="font-semibold text-gray-800">10</span> items.
+              Showing page {currentPage} of {totalPages} <span className="font-semibold text-gray-800">({totalItems} items total)</span>.
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -34,12 +170,20 @@ const EducationLevelListPage: React.FC = () => {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Type to search..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by ID, Name..." 
                 className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
             <button 
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setFieldToEdit(null);
+                setNewName('');
+                setNewStatus('Active');
+                setCreateError('');
+                setIsModalOpen(true);
+              }}
               className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
             >
               Create Education Level
@@ -59,29 +203,81 @@ const EducationLevelListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
-                  <td className="px-4 py-3 text-gray-500">{item.id}</td>
-                  <td className="px-4 py-3 text-gray-700">{item.name}</td>
-                  <td className="px-4 py-3 text-gray-700">{item.status}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1.5 text-gray-400">
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-blue-500 mb-2" />
+                      Loading...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-red-500 bg-red-50/50">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredFields.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500 font-medium">
+                    No items found.
+                  </td>
+                </tr>
+              ) : (
+                filteredFields.map((item) => (
+                  <tr key={item.iEducationLevelID} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-3 text-gray-500">{item.iEducationLevelID}</td>
+                    <td className="px-4 py-3 text-gray-700">{item.vEducationLevelName}</td>
+                    <td className="px-4 py-3 text-gray-700">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
+                        item.status === 'Active' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5 text-gray-400">
+                        <button 
+                          onClick={() => openViewModal(item)}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => openEditModal(item)}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => openDeleteModal(item.iEducationLevelID)}
+                          className="text-red-400 rounded p-1 hover:bg-red-50 transition-colors" 
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+        {!isLoading && !error && totalPages > 1 && (
+          <div className="px-4 pb-4">
+            <Pagination 
+              totalPages={totalPages} 
+              currentPage={currentPage} 
+              onPageChange={setCurrentPage} 
+            />
+          </div>
+        )}
       </div>
 
       {/* Modal Popup */}
@@ -89,17 +285,24 @@ const EducationLevelListPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-[15px] font-medium text-gray-800">Create Education Level</h2>
+              <h2 className="text-[15px] font-medium text-gray-800">
+                {fieldToEdit ? 'Edit Education Level' : 'Create Education Level'}
+              </h2>
             </div>
             <div className="p-6">
-              <form>
-                <div className="mb-6">
+              <form onSubmit={handleCreateGroup}>
+                {createError && (
+                  <div className="mb-4 text-red-500 text-sm">{createError}</div>
+                )}
+                <div className="mb-4">
                   <label htmlFor="educationLevelName" className="block text-sm font-bold text-slate-700 mb-2">
-                    Education Level Name
+                    Name
                   </label>
                   <input
                     type="text"
                     id="educationLevelName"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
                     className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
@@ -109,6 +312,8 @@ const EducationLevelListPage: React.FC = () => {
                   </label>
                   <select
                     id="educationLevelStatus"
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
                     className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-white"
                   >
                     <option value="Active">Active</option>
@@ -117,21 +322,114 @@ const EducationLevelListPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors"
+                    type="submit"
+                    disabled={isCreating}
+                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors disabled:opacity-50 flex items-center"
                   >
-                    Create
+                    {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {isCreating ? (fieldToEdit ? 'Saving...' : 'Creating...') : (fieldToEdit ? 'Save Changes' : 'Create')}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setCreateError('');
+                      setNewName('');
+                      setNewStatus('Active');
+                      setFieldToEdit(null);
+                    }}
                     className="bg-gray-100 text-gray-600 px-6 py-2.5 rounded font-medium hover:bg-gray-200 transition-colors"
                   >
                     Cancel
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="p-8 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-100/70 flex items-center justify-center mx-auto mb-5">
+                <AlertTriangle className="w-7 h-7 text-red-600" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-3">Delete Record</h2>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                Are you sure you want to delete this record? This action cannot be undone.
+              </p>
+              {deleteError && (
+                <div className="mt-4 text-red-500 text-sm">{deleteError}</div>
+              )}
+            </div>
+            <div className="bg-slate-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="bg-white border border-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+              >
+                {isDeleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
+      {isViewModalOpen && fieldToView && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-[15px] font-semibold text-gray-800 flex items-center gap-2">
+                <Eye className="w-4 h-4 text-blue-500" />
+                View Education Level
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 border-b border-gray-50 pb-3">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider col-span-1">ID</div>
+                  <div className="text-sm text-gray-800 font-medium col-span-2">{fieldToView.iEducationLevelID}</div>
+                </div>
+                <div className="grid grid-cols-3 border-b border-gray-50 pb-3">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider col-span-1">Name</div>
+                  <div className="text-sm text-gray-800 font-medium col-span-2">{fieldToView.vEducationLevelName}</div>
+                </div>
+                <div className="grid grid-cols-3 pb-2">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider col-span-1">Status</div>
+                  <div className="text-sm text-gray-800 font-medium col-span-2">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
+                      fieldToView.status === 'Active' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {fieldToView.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-end border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsViewModalOpen(false)}
+                className="bg-white border border-gray-200 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

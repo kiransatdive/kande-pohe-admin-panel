@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, ChevronDown, ChevronRight,
   List, CheckCircle, LayoutList, FileCode, LayoutDashboard,
-  Settings, Hourglass, Bookmark, BookmarkMinus, Utensils, Compass, Flame, Heart, MoreVertical, Signpost, Link2, Landmark,
+  Settings, Hourglass, Bookmark, BookmarkMinus, Utensils, Flame, Heart, MoreVertical, Link2, Landmark,
   Star, Activity, Asterisk, Folder, Mail, RefreshCw, UserCog
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -13,7 +13,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
-  const [openDropdown, setOpenDropdown] = useState<string | null>('user-manage');
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const location = useLocation();
   const isAdminActive = location.pathname === '/admin' && openDropdown === null;
   const isDashboardActive = location.pathname === '/' && openDropdown === null;
@@ -193,11 +193,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                 { name: 'Community', icon: Bookmark },
                 { name: 'Sub-Community', icon: BookmarkMinus },
                 { name: 'Diet', icon: Utensils },
-                { name: 'District', icon: Compass },
                 { name: 'Gotra', icon: Flame },
                 { name: 'Marital-Status', icon: Heart },
                 { name: 'Height', icon: MoreVertical },
-                { name: 'Taluka', icon: Signpost },
                 { name: 'Father-Mother Status', icon: Link2 },
                 { name: 'Education Name', icon: Link2 },
                 { name: 'Education Level', icon: Link2 },

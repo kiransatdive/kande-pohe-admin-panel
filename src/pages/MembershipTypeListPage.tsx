@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Search } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 
 const MembershipTypeListPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
