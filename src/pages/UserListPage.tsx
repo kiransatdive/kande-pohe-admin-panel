@@ -76,25 +76,43 @@ const UserListPage: React.FC = () => {
     fetchUsers(currentPage);
   }, [currentPage]);
 
-  const formatDate = (timestamp?: number | string | null) => {
-    if (!timestamp) return 'N/A';
-    // If it's a Unix timestamp in seconds
-    const date = new Date(Number(timestamp) * 1000);
-    return date.toLocaleDateString('en-GB');
+  const formatDate = (dateValue?: number | string | null) => {
+    if (!dateValue) return 'N/A';
+    
+    if (typeof dateValue === 'number' || (typeof dateValue === 'string' && /^\d+$/.test(dateValue))) {
+      let timestamp = Number(dateValue);
+      if (timestamp < 10000000000) {
+        timestamp *= 1000;
+      }
+      return new Date(timestamp).toLocaleDateString('en-GB');
+    }
+
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return 'N/A';
+    
+    return d.toLocaleDateString('en-GB');
   };
 
   const formatStatus = (status: number | string | null) => {
-    if (status === 1) return 'Active';
-    if (status === 10) return 'Pending';
-    if (status === 2) return 'Inactive';
+    if (status === 0 || status === '0') return 'Deleted';
+    if (status === 1 || status === '1') return 'Active';
+    if (status === 2 || status === '2') return 'Inactive';
+    if (status === 3 || status === '3' || status === 10 || status === '10') return 'Pending';
+    if (status === 4 || status === '4') return 'Disapproved';
+    if (status === 5 || status === '5') return 'Approved';
+    if (status === 6 || status === '6') return 'Blocked';
     if (!status) return 'Unknown';
     return String(status);
   };
   
   const getStatusColor = (status: number | string | null) => {
-    if (status === 1) return 'bg-[#00b562]'; // Active
-    if (status === 10) return 'bg-amber-500'; // Pending
-    if (status === 2) return 'bg-red-500'; // Inactive
+    if (status === 0 || status === '0') return 'bg-gray-600'; // Deleted
+    if (status === 1 || status === '1') return 'bg-[#00b562]'; // Active
+    if (status === 2 || status === '2') return 'bg-orange-500'; // Inactive
+    if (status === 3 || status === '3' || status === 10 || status === '10') return 'bg-amber-500'; // Pending
+    if (status === 4 || status === '4') return 'bg-red-500'; // Disapproved
+    if (status === 5 || status === '5') return 'bg-[#00b562]'; // Approved
+    if (status === 6 || status === '6') return 'bg-red-700'; // Blocked
     return 'bg-gray-400';
   }
 
@@ -114,12 +132,12 @@ const UserListPage: React.FC = () => {
         }
       });
       
-      if (response.data.success) {
+      if (response.data?.success || response.status === 200 || response.status === 204) {
         setIsDeleteModalOpen(false);
         setUserToDelete(null);
         fetchUsers(currentPage); // Refresh the list
       } else {
-        alert(response.data.message || 'Failed to delete user');
+        alert(response.data?.message || 'Failed to delete user');
       }
     } catch (err: any) {
       console.error('Error deleting user:', err);
@@ -163,12 +181,12 @@ const UserListPage: React.FC = () => {
                 placeholder="Search..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-base rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
             <Link 
               to="/user-list-newly-registered" 
-              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap"
             >
               Newly Register
             </Link>

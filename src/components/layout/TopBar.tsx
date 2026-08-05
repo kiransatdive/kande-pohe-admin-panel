@@ -142,7 +142,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
   const adminDataString = localStorage.getItem('adminData');
   const adminData = adminDataString ? JSON.parse(adminDataString) : null;
   const adminName = adminData ? `${adminData.firstName} ${adminData.lastName}` : 'Admin User';
-  const adminRole = adminData?.role || 'Administrator';
+  const adminEmail = adminData?.email || adminData?.vEmail || 'admin@example.com';
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -354,14 +354,14 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
               />
               <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <span className="text-[13px] text-gray-700 font-semibold tracking-wide hidden sm:inline-block">{adminName}</span>
+            {/* <span className="text-[13px] text-gray-700 font-semibold tracking-wide hidden sm:inline-block truncate max-w-[200px]">{adminEmail}</span> */}
           </button>
 
           {isProfilePopupOpen && (
             <div className="absolute right-0 top-12 w-48 bg-white border border-gray-200 rounded-lg shadow-xl py-4 px-4 z-50 text-left">
               <div className="flex flex-col">
-                <span className="text-sm text-gray-900 font-medium">{adminName}</span>
-                <span className="text-xs text-gray-500 mt-0.5">{adminRole}</span>
+                {/* <span className="text-sm text-gray-900 font-medium">{adminName}</span> */}
+                <span className="text-xs text-gray-500 mt-0.5">{adminEmail}</span>
                 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2.5">
                   <button onClick={handleLogout} className="text-left text-xs text-red-500 hover:text-red-600 transition-colors">Sign Out</button>

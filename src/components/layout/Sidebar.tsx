@@ -18,6 +18,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const isAdminActive = location.pathname === '/admin' && openDropdown === null;
   const isDashboardActive = location.pathname === '/' && openDropdown === null;
 
+  const adminDataString = localStorage.getItem('adminData');
+  const adminData = adminDataString ? JSON.parse(adminDataString) : null;
+  const adminEmail = adminData?.email || adminData?.vEmail || '';
+
   const toggleDropdown = (name: string) => {
     setOpenDropdown(openDropdown === name ? null : name);
   };
@@ -39,19 +43,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           </div>
         )}
 
-        <div> 
-          <NavLink 
-            to="/admin" 
-            onClick={() => setOpenDropdown(null)}
-            className={`w-full flex items-center px-2 py-2.5 text-sm text-slate-200 hover:bg-slate-800 rounded relative group transition-colors ${!isOpen && 'justify-center'} ${isAdminActive ? 'bg-slate-800' : ''}`}
-          >
-            {isAdminActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
-            <div className={`flex items-center gap-3 ${isOpen ? 'ml-2' : ''}`}>
-              <UserCog className={`w-5 h-5 flex-shrink-0 ${isAdminActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
-              {isOpen && <span className="font-semibold whitespace-nowrap">admin</span>}
-            </div>
-          </NavLink>
-        </div>
+        {adminEmail === 'superAdmin@example.com' && (
+          <div> 
+            <NavLink 
+              to="/admin" 
+              onClick={() => setOpenDropdown(null)}
+              className={`w-full flex items-center px-2 py-2.5 text-sm text-slate-200 hover:bg-slate-800 rounded relative group transition-colors ${!isOpen && 'justify-center'} ${isAdminActive ? 'bg-slate-800' : ''}`}
+            >
+              {isAdminActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>}
+              <div className={`flex items-center gap-3 ${isOpen ? 'ml-2' : ''}`}>
+                <UserCog className={`w-5 h-5 flex-shrink-0 ${isAdminActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                {isOpen && <span className="font-semibold whitespace-nowrap">admin</span>}
+              </div>
+            </NavLink>
+          </div>
+        )}
 
         <div> 
           <NavLink 

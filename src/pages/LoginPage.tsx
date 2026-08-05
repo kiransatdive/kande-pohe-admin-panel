@@ -46,8 +46,12 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       console.error("Login connection error:", err);
       // Axios wraps the response error in err.response
-      const errorMsg = err.response?.data?.message || err.message || 'Server unreachable. Please check if the backend is running.';
-      setError(`Connection failed: ${errorMsg}`);
+      if (err.response?.status === 429) {
+        setError('Too many login attempts. Please wait a few minutes and try again.');
+      } else {
+        const errorMsg = err.response?.data?.message || err.message || 'Server unreachable. Please check if the backend is running.';
+        setError(`Connection failed: ${errorMsg}`);
+      }
     } finally {
       setIsLoading(false);
     }

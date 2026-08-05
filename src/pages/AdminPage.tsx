@@ -20,6 +20,7 @@ const AdminPage: React.FC = () => {
     eStatus: 'Active'
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewAdminData, setViewAdminData] = useState<Admin | null>(null);
@@ -35,19 +36,39 @@ const AdminPage: React.FC = () => {
     eStatus: 'Active'
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [editError, setEditError] = useState('');
   
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const adminDataString = localStorage.getItem('adminData');
+  const adminData = adminDataString ? JSON.parse(adminDataString) : null;
+  const adminEmail = adminData?.email || adminData?.vEmail || '';
+
   useEffect(() => {
-    fetchAdmins();
+    if (adminEmail === 'superAdmin@example.com') {
+      fetchAdmins();
+    }
   }, []);
+
+  if (adminEmail !== 'superAdmin@example.com') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-sm">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
 
   const fetchAdmins = async () => {
     try {
@@ -114,12 +135,14 @@ const AdminPage: React.FC = () => {
       vPassword: '',
       eStatus: 'Active'
     });
+    setCreateError('');
     setIsCreateModalOpen(true);
   };
 
   const handleCreateSubmit = async () => {
     try {
       setIsCreating(true);
+      setCreateError('');
       const response = await apiClient.post('v1/admin/admins', createAdminData, {
         headers: {
           'bypass-tunnel-reminder': 'true'
@@ -130,11 +153,11 @@ const AdminPage: React.FC = () => {
         setIsCreateModalOpen(false);
         fetchAdmins(); // Refresh the list
       } else {
-        alert(response.data.message || 'Failed to create admin');
+        setCreateError(response.data.message || 'Failed to create admin');
       }
     } catch (err: any) {
       console.error('Error creating admin:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to create admin');
+      setCreateError(err.response?.data?.message || err.message || 'Failed to create admin');
     } finally {
       setIsCreating(false);
     }
@@ -149,12 +172,14 @@ const AdminPage: React.FC = () => {
       vPassword: '', // Don't pre-fill password; only send it if user types a new one
       eStatus: admin.status
     });
+    setEditError('');
     setIsEditModalOpen(true);
   };
 
   const handleEditSubmit = async () => {
     try {
       setIsUpdating(true);
+      setEditError('');
       const payload: any = {
         vFirstName: editAdminData.vFirstName,
         vLastName: editAdminData.vLastName,
@@ -177,11 +202,11 @@ const AdminPage: React.FC = () => {
         setIsEditModalOpen(false);
         fetchAdmins(); // Refresh the list with updated data
       } else {
-        alert(response.data.message || 'Failed to update admin');
+        setEditError(response.data.message || 'Failed to update admin');
       }
     } catch (err: any) {
       console.error('Error updating admin:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to update admin');
+      setEditError(err.response?.data?.message || err.message || 'Failed to update admin');
     } finally {
       setIsUpdating(false);
     }
@@ -189,6 +214,7 @@ const AdminPage: React.FC = () => {
 
   const handleDeleteClick = (id: number) => {
     setAdminToDelete(id);
+    setDeleteError('');
     setIsDeleteModalOpen(true);
   };
 
@@ -197,6 +223,7 @@ const AdminPage: React.FC = () => {
     
     try {
       setIsDeleting(true);
+      setDeleteError('');
       const response = await apiClient.delete(`v1/admin/admins/${adminToDelete}`, {
         headers: {
           'bypass-tunnel-reminder': 'true'
@@ -208,11 +235,11 @@ const AdminPage: React.FC = () => {
         setAdminToDelete(null);
         fetchAdmins(); // Refresh the list after successful deletion
       } else {
-        alert(response.data.message || 'Failed to delete admin');
+        setDeleteError(response.data.message || 'Failed to delete admin');
       }
     } catch (err: any) {
       console.error('Error deleting admin:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to delete admin');
+      setDeleteError(err.response?.data?.message || err.message || 'Failed to delete admin');
     } finally {
       setIsDeleting(false);
     }
@@ -335,6 +362,9 @@ const AdminPage: React.FC = () => {
             
             <div className="px-6 pb-6">
               <div className="space-y-4">
+                {createError && (
+                  <div className="text-red-500 text-sm">{createError}</div>
+                )}
                 <div>
                   <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">First Name</label>
                   <input 
@@ -472,6 +502,9 @@ const AdminPage: React.FC = () => {
             
             <div className="px-6 pb-6 pt-4">
               <div className="space-y-4">
+                {editError && (
+                  <div className="text-red-500 text-sm">{editError}</div>
+                )}
                 <div>
                   <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">First Name</label>
                   <input 
@@ -548,6 +581,9 @@ const AdminPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Delete Admin</h3>
             <p className="text-gray-500 text-sm mb-6">Are you sure you want to delete this admin? This action cannot be undone.</p>
+            {deleteError && (
+              <div className="text-red-500 text-sm mb-4 text-center">{deleteError}</div>
+            )}
             
             <div className="flex justify-center gap-3">
               <button 

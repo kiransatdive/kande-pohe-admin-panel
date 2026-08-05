@@ -4,9 +4,10 @@ interface PaginationProps {
   totalPages?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
+  infoText?: React.ReactNode;
 }
 
-const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 1, onPageChange }) => {
+const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 1, onPageChange, infoText }) => {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   // Simple logic to show a window of pages if there are too many
@@ -20,9 +21,13 @@ const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 
   const visiblePages = getVisiblePages();
 
   return (
-    <div className="flex justify-end p-4 border-t border-gray-100 bg-white">
+    <div className="flex justify-between items-center p-4 border-t border-gray-100 bg-white w-full">
+      <div className="text-xs text-gray-500">
+        {infoText}
+      </div>
       <div className="flex items-center -space-x-px rounded">
         <button 
+          type="button"
           onClick={() => onPageChange && onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className="px-3 py-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-l hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -33,6 +38,7 @@ const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 
         {visiblePages.map(num => (
           <button 
             key={num} 
+            type="button"
             onClick={() => onPageChange && onPageChange(num)}
             className={`px-3 py-1.5 text-sm border transition-colors ${
               num === currentPage 
@@ -45,6 +51,7 @@ const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 
         ))}
 
         <button 
+          type="button"
           onClick={() => onPageChange && onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className="px-3 py-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-r hover:bg-gray-50 transition-colors disabled:opacity-50"
