@@ -25,12 +25,12 @@ const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 
       <div className="text-xs text-gray-500">
         {infoText}
       </div>
-      <div className="flex items-center -space-x-px rounded">
+      <div className="flex items-center -space-x-px shadow-sm rounded-md overflow-hidden">
         <button 
           type="button"
           onClick={() => onPageChange && onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-3 py-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-l hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 focus:outline-none focus:z-10 focus:ring-1 focus:ring-[#337ab7] focus:border-[#337ab7] m-0 rounded-none"
         >
           &laquo;
         </button>
@@ -40,9 +40,9 @@ const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 
             key={num} 
             type="button"
             onClick={() => onPageChange && onPageChange(num)}
-            className={`px-3 py-1.5 text-sm border transition-colors ${
+            className={`px-3 py-1.5 text-sm font-medium border transition-colors focus:outline-none focus:z-10 focus:ring-1 focus:ring-[#337ab7] focus:border-[#337ab7] m-0 rounded-none ${
               num === currentPage 
-                ? 'bg-[#337ab7] text-white border-[#337ab7]' 
+                ? 'z-10 bg-[#337ab7] text-white border-[#337ab7]' 
                 : 'text-[#337ab7] bg-white border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -54,7 +54,7 @@ const Pagination: React.FC<PaginationProps> = ({ totalPages = 10, currentPage = 
           type="button"
           onClick={() => onPageChange && onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-3 py-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-r hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 focus:outline-none focus:z-10 focus:ring-1 focus:ring-[#337ab7] focus:border-[#337ab7] m-0 rounded-none"
         >
           &raquo;
         </button>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Edit, Image as ImageIcon, Check, Trash2, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Eye, Check, XCircle, MinusCircle, Search, Loader2, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Pagination from '../components/common/Pagination';
 import UserViewModal from '../components/common/UserViewModal';
-import UserPhotosModal from '../components/common/UserPhotosModal';
 import UserEditModal from '../components/common/UserEditModal';
 import apiClient from '../services/apiClient';
 
@@ -30,25 +29,31 @@ const UserListPage: React.FC = () => {
 
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-  const [selectedPhotoUserId, setSelectedPhotoUserId] = useState<number | null>(null);
-  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   
-  const [selectedEditUserId, setSelectedEditUserId] = useState<number | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<number | null>(null);
   
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<number | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [userToApprove, setUserToApprove] = useState<number | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
 
-  const fetchUsers = async (page: number) => {
+  const [isDisapproveModalOpen, setIsDisapproveModalOpen] = useState(false);
+  const [userToDisapprove, setUserToDisapprove] = useState<number | null>(null);
+  const [isDisapproving, setIsDisapproving] = useState(false);
+
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [userToBlock, setUserToBlock] = useState<number | null>(null);
+  const [isBlocking, setIsBlocking] = useState(false);
+
+  const fetchUsers = async (page: number, currentSearch = searchQuery) => {
     setIsLoading(true);
     setError('');
+    const isSearching = currentSearch.trim().length > 0;
     try {
       const response = await apiClient.get('v1/admin/users/all', {
         params: {
-          page,
-          limit: 10
+          page: isSearching ? 1 : page,
+          limit: isSearching ? 100 : 10
         },
         headers: {
           'bypass-tunnel-reminder': 'true'
@@ -57,9 +62,12 @@ const UserListPage: React.FC = () => {
 
       if (response.data.success) {
         setUsers(response.data.data || []);
-        if (response.data.meta) {
+        if (!isSearching && response.data.meta) {
           setTotalPages(response.data.meta.totalPages || 1);
           setTotalItems(response.data.meta.total || 0);
+        } else if (!isSearching) {
+          setTotalItems(response.data.data?.length || 0);
+          setTotalPages(1);
         }
       } else {
         setError('Failed to fetch users');
@@ -73,8 +81,15 @@ const UserListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUsers(currentPage);
-  }, [currentPage]);
+    const delayDebounceFn = setTimeout(() => {
+      // If we are searching, we already have all data (up to 100). Don't refetch on page change unless searchQuery itself changed.
+      // We will only refetch if searchQuery changed, OR if we are not searching and currentPage changed.
+      fetchUsers(searchQuery ? 1 : currentPage, searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, searchQuery ? 1 : currentPage]);
 
   const formatDate = (dateValue?: number | string | null) => {
     if (!dateValue) return 'N/A';
@@ -116,38 +131,105 @@ const UserListPage: React.FC = () => {
     return 'bg-gray-400';
   }
 
-  const handleDeleteClick = (id: number) => {
-    setUserToDelete(id);
-    setIsDeleteModalOpen(true);
+  const handleApproveClick = (id: number) => {
+    setUserToApprove(id);
+    setIsApproveModalOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!userToDelete) return;
+  const handleApproveConfirm = async () => {
+    if (!userToApprove) return;
     
     try {
-      setIsDeleting(true);
-      const response = await apiClient.delete(`v1/admin/users/${userToDelete}`, {
+      setIsApproving(true);
+      const response = await apiClient.patch(`v1/admin/users/${userToApprove}/status`, {
+        action: 'approve'
+      }, {
         headers: {
           'bypass-tunnel-reminder': 'true'
         }
       });
       
       if (response.data?.success || response.status === 200 || response.status === 204) {
-        setIsDeleteModalOpen(false);
-        setUserToDelete(null);
+        setIsApproveModalOpen(false);
+        setUserToApprove(null);
         fetchUsers(currentPage); // Refresh the list
       } else {
-        alert(response.data?.message || 'Failed to delete user');
+        alert(response.data?.message || 'Failed to approve user');
       }
     } catch (err: any) {
-      console.error('Error deleting user:', err);
-      alert(err.response?.data?.message || err.message || 'Failed to delete user');
+      console.error('Error approving user:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to approve user');
     } finally {
-      setIsDeleting(false);
+      setIsApproving(false);
     }
   };
 
-  // Client-side search filtering (since API search isn't explicitly defined yet)
+  const handleDisapproveClick = (id: number) => {
+    setUserToDisapprove(id);
+    setIsDisapproveModalOpen(true);
+  };
+
+  const handleDisapproveConfirm = async () => {
+    if (!userToDisapprove) return;
+    
+    try {
+      setIsDisapproving(true);
+      const response = await apiClient.patch(`v1/admin/users/${userToDisapprove}/status`, {
+        action: 'reject'
+      }, {
+        headers: {
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+      
+      if (response.data?.success || response.status === 200 || response.status === 204) {
+        setIsDisapproveModalOpen(false);
+        setUserToDisapprove(null);
+        fetchUsers(currentPage);
+      } else {
+        alert(response.data?.message || 'Failed to disapprove user');
+      }
+    } catch (err: any) {
+      console.error('Error disapproving user:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to disapprove user');
+    } finally {
+      setIsDisapproving(false);
+    }
+  };
+
+  const handleBlockClick = (id: number) => {
+    setUserToBlock(id);
+    setIsBlockModalOpen(true);
+  };
+
+  const handleBlockConfirm = async () => {
+    if (!userToBlock) return;
+    
+    try {
+      setIsBlocking(true);
+      const response = await apiClient.patch(`v1/admin/users/${userToBlock}/status`, {
+        action: 'block'
+      }, {
+        headers: {
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+      
+      if (response.data?.success || response.status === 200 || response.status === 204) {
+        setIsBlockModalOpen(false);
+        setUserToBlock(null);
+        fetchUsers(currentPage);
+      } else {
+        alert(response.data?.message || 'Failed to block user');
+      }
+    } catch (err: any) {
+      console.error('Error blocking user:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to block user');
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -161,6 +243,13 @@ const UserListPage: React.FC = () => {
     );
   });
 
+  const handlePageChange = (page: number) => {
+    const maxPage = searchQuery ? Math.ceil(filteredUsers.length / 10) || 1 : totalPages;
+    if (page >= 1 && page <= maxPage) {
+      setCurrentPage(page);
+    }
+  };
+
   return (
     <div className="flex flex-col text-sm">
       {/* User List Card */}
@@ -170,7 +259,7 @@ const UserListPage: React.FC = () => {
           <div className="flex flex-col gap-1">
             <h2 className="text-[15px] font-medium text-gray-800">User List (All)</h2>
             <div className="text-xs text-gray-500">
-              Showing page {currentPage} of {totalPages} <span className="font-semibold text-gray-800">({totalItems} items total)</span>.
+              Showing {(currentPage - 1) * 10 + 1}-{Math.min(currentPage * 10, searchQuery ? filteredUsers.length : totalItems)} of <span className="font-semibold text-gray-800">{searchQuery ? filteredUsers.length : totalItems}</span> items.
             </div>
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -178,9 +267,12 @@ const UserListPage: React.FC = () => {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Search..." 
+                placeholder="Type to search all pages..." 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (currentPage !== 1) setCurrentPage(1);
+                }}
                 className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-base rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
@@ -232,7 +324,7 @@ const UserListPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user, index) => (
+                (searchQuery ? filteredUsers.slice((currentPage - 1) * 10, currentPage * 10) : filteredUsers).map((user, index) => (
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3 text-gray-500">{(currentPage - 1) * 10 + index + 1}</td>
                     <td className="px-4 py-3 text-gray-700">{user.First_Name || '-'}</td>
@@ -242,7 +334,7 @@ const UserListPage: React.FC = () => {
                     <td className="px-4 py-3 text-gray-600">{formatDate(user.LastLoginTime)}</td>
                     <td className="px-4 py-3 text-gray-600">{formatDate(user.created_at)}</td>
                     <td className="px-4 py-3">
-                      <span className={`${getStatusColor(user.status)} text-white text-[10px] font-medium px-2.5 py-1 rounded`}>
+                      <span className={`${getStatusColor(user.status)} text-white text-xs font-medium px-3 py-1.5 rounded inline-block min-w-[100px] text-center`}>
                         {formatStatus(user.status)}
                       </span>
                     </td>
@@ -260,33 +352,34 @@ const UserListPage: React.FC = () => {
                         </button>
                         <button 
                           onClick={() => {
-                            setSelectedEditUserId(user.id);
+                            setUserToEdit(user.id);
                             setIsEditModalOpen(true);
                           }}
-                          className="rounded p-1 hover:bg-blue-50 transition-colors text-blue-400" 
+                          className="rounded p-1 hover:bg-purple-50 transition-colors text-purple-500" 
                           title="Edit"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => {
-                            setSelectedPhotoUserId(user.id);
-                            setIsPhotoModalOpen(true);
-                          }}
-                          className="rounded p-1 hover:bg-amber-50 transition-colors text-amber-500" 
-                          title="View Photos"
+                          onClick={() => handleApproveClick(user.id)}
+                          className="rounded p-1 hover:bg-emerald-50 transition-colors text-emerald-500" 
+                          title="Approve"
                         >
-                          <ImageIcon className="w-4 h-4" />
-                        </button>
-                        <button className="rounded p-1 hover:bg-emerald-50 transition-colors text-emerald-500" title="Approve">
                           <Check className="w-4 h-4" strokeWidth={3} />
                         </button>
                         <button 
-                          onClick={() => handleDeleteClick(user.id)}
-                          className="rounded p-1 hover:bg-red-50 transition-colors text-orange-400" 
-                          title="Delete"
+                          onClick={() => handleDisapproveClick(user.id)}
+                          className="rounded p-1 hover:bg-red-50 transition-colors text-red-500" 
+                          title="Disapprove"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <XCircle className="w-4 h-4" strokeWidth={2.5} />
+                        </button>
+                        <button 
+                          onClick={() => handleBlockClick(user.id)}
+                          className="rounded p-1 hover:bg-orange-50 transition-colors text-orange-500" 
+                          title="Block"
+                        >
+                          <MinusCircle className="w-4 h-4" strokeWidth={2.5} />
                         </button>
                       </div>
                     </td>
@@ -296,11 +389,12 @@ const UserListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {!isLoading && !error && (
+        {(searchQuery ? filteredUsers.length > 0 : users.length > 0) && (
           <Pagination 
-            totalPages={totalPages} 
-            currentPage={currentPage} 
-            onPageChange={setCurrentPage} 
+            currentPage={currentPage}
+            totalPages={searchQuery ? Math.ceil(filteredUsers.length / 10) || 1 : totalPages}
+            onPageChange={handlePageChange}
+            infoText={`Showing ${(currentPage - 1) * 10 + 1} to ${Math.min(currentPage * 10, searchQuery ? filteredUsers.length : totalItems)} of ${searchQuery ? filteredUsers.length : totalItems} entries`}
           />
         )}
       </div>
@@ -311,58 +405,142 @@ const UserListPage: React.FC = () => {
         onClose={() => setIsViewModalOpen(false)}
       />
 
-      <UserPhotosModal 
-        userId={selectedPhotoUserId!}
-        isOpen={isPhotoModalOpen}
-        onClose={() => setIsPhotoModalOpen(false)}
-      />
+      {isEditModalOpen && userToEdit && (
+        <UserEditModal 
+          userId={userToEdit}
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setUserToEdit(null);
+          }}
+          onSuccess={() => {
+            setIsEditModalOpen(false);
+            setUserToEdit(null);
+            fetchUsers(currentPage);
+          }}
+        />
+      )}
 
-      <UserEditModal 
-        userId={selectedEditUserId!}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSuccess={() => fetchUsers(currentPage)}
-      />
-
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
+      {/* Approve Confirmation Modal */}
+      {isApproveModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
+                <Check className="w-6 h-6 text-green-600" />
               </div>
-              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">Delete User</h3>
+              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">Approve User</h3>
               <p className="text-sm text-center text-gray-500">
-                Are you sure you want to delete this user? This action cannot be undone and will permanently remove their data from the system.
+                Are you sure you want to approve this user?
               </p>
             </div>
             <div className="flex px-6 py-4 bg-gray-50 gap-3 justify-end">
               <button
-                onClick={() => setIsDeleteModalOpen(false)}
+                onClick={() => setIsApproveModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
-                disabled={isDeleting}
+                disabled={isApproving}
               >
                 Cancel
               </button>
               <button
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none disabled:opacity-50 flex items-center gap-2"
+                onClick={handleApproveConfirm}
+                disabled={isApproving}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none disabled:opacity-50 flex items-center gap-2"
               >
-                {isDeleting ? (
+                {isApproving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Deleting...
+                    Approving...
                   </>
                 ) : (
-                  'Delete User'
+                  'Approve User'
                 )}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Disapprove Confirmation Modal */}
+      {isDisapproveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <XCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">Disapprove User</h3>
+              <p className="text-sm text-center text-gray-500">
+                Are you sure you want to disapprove this user?
+              </p>
+            </div>
+            <div className="flex px-6 py-4 bg-gray-50 gap-3 justify-end">
+              <button
+                onClick={() => setIsDisapproveModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+                disabled={isDisapproving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisapproveConfirm}
+                disabled={isDisapproving}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDisapproving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Disapproving...
+                  </>
+                ) : (
+                  'Disapprove User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Block Confirmation Modal */}
+      {isBlockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-orange-100 rounded-full mb-4">
+                <MinusCircle className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">Block User</h3>
+              <p className="text-sm text-center text-gray-500">
+                Are you sure you want to block this user?
+              </p>
+            </div>
+            <div className="flex px-6 py-4 bg-gray-50 gap-3 justify-end">
+              <button
+                onClick={() => setIsBlockModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+                disabled={isBlocking}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBlockConfirm}
+                disabled={isBlocking}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:outline-none disabled:opacity-50 flex items-center gap-2"
+              >
+                {isBlocking ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Blocking...
+                  </>
+                ) : (
+                  'Block User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

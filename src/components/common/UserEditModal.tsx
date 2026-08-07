@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Save, User as UserIcon, MapPin, Heart, Users, Star } from 'lucide-react';
+import { X, User as UserIcon, MapPin, Heart, Users, Star, Loader2, Camera, Trash2, Save } from 'lucide-react';
 import apiClient from '../../services/apiClient';
 
 
@@ -64,7 +64,10 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
   const [activeTab, setActiveTab] = useState('basic');
   const [masterData, setMasterData] = useState<Record<string, {label: string, value: string | number}[]>>({});
   const [profileCreatedForOptions, setProfileCreatedForOptions] = useState<{label: string, value: string | number}[]>([]);
@@ -89,11 +92,11 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
   const [raashiOptions, setRaashiOptions] = useState<{label: string, value: string | number}[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && userId) {
       setFormData({});
-      setError('');
-      if (userId) {
-        fetchUserDetails();
+      fetchUserDetails();
+      
+      if (masterData.religion === undefined) {
         fetchProfileCreatedForOptions();
         fetchMaritalStatusOptions();
         fetchMotherTongueOptions();
@@ -629,6 +632,57 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
       [name]: type === 'number' && value !== '' ? Number(value) : value
     }));
   };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show local preview immediately using URL.createObjectURL
+    setFormData(prev => ({ ...prev, propic: URL.createObjectURL(file) }));
+
+    try {
+      setIsUploadingPhoto(true);
+      setError('');
+      setSuccessMessage('');
+      
+      const payload = new FormData();
+      payload.append('profilePhoto', file);
+
+      const response = await apiClient.post(`v1/admin/users/${userId}/upload-photos`, payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+
+      if (response.data.success) {
+        // Fetch user data again just to get the reliable profile photo URL
+        try {
+          const userRes = await apiClient.get(`v1/admin/users/${userId}`, {
+            headers: { 'bypass-tunnel-reminder': 'true' }
+          });
+          if (userRes.data.success && userRes.data.data && userRes.data.data.propic) {
+            setFormData(prev => ({ ...prev, propic: userRes.data.data.propic }));
+          }
+        } catch (e) {
+          console.error("Failed to refresh profile photo", e);
+        }
+        
+        setSuccessMessage('Profile photo updated successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.data.message || 'Failed to upload photo');
+      }
+    } catch (err: any) {
+      console.error('Error uploading photo:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while uploading photo');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
   
 
   if (!isOpen) return null;
@@ -640,7 +694,84 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
     { id: 'physical', label: 'Physical', icon: Heart },
     { id: 'family', label: 'Family', icon: Users },
     { id: 'astrology', label: 'Astrology', icon: Star },
+    { id: 'photos', label: 'Photos', icon: Camera },
   ];
+
+  const handleAdditionalPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      setError('');
+      
+      const payload = new FormData();
+      payload.append('additionalPhotos', file);
+
+      const response = await apiClient.post(`v1/admin/users/${userId}/upload-photos`, payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+
+      if (response.data.success) {
+        // Fetch user data again just to get the newly created full photo objects, 
+        // but only update the photos array so we don't wipe out other unsaved form changes!
+        try {
+          const userRes = await apiClient.get(`v1/admin/users/${userId}`, {
+            headers: { 'bypass-tunnel-reminder': 'true' }
+          });
+          if (userRes.data.success && userRes.data.data.photos) {
+            setFormData(prev => ({ ...prev, photos: userRes.data.data.photos }));
+          }
+        } catch (e) {
+          console.error("Failed to refresh photos list", e);
+        }
+        
+        setSuccessMessage('Photo added successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.data.message || 'Failed to upload photo');
+      }
+    } catch (err: any) {
+      console.error('Error uploading photo:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while uploading photo');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: number) => {
+    try {
+      setIsLoading(true);
+      setError('');
+      setSuccessMessage('');
+      const response = await apiClient.delete(`v1/admin/users/${userId}/photos/${photoId}`, {
+        headers: { 'bypass-tunnel-reminder': 'true' }
+      });
+      
+      if (response.data.success) {
+        setFormData(prev => ({
+          ...prev,
+          photos: (prev.photos || []).filter((p: any) => p.iPhoto_ID !== photoId)
+        }));
+        setSuccessMessage('Photo deleted successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.data.message || 'Failed to delete photo');
+      }
+    } catch (err: any) {
+      console.error('Error deleting photo:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while deleting photo');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -690,7 +821,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 pb-48 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
@@ -699,9 +830,25 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
             ) : (
               <form id="edit-user-form" onSubmit={handleSave}>
                 {error && (
-                  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
-                    <p className="font-bold">Error</p>
-                    <p>{error}</p>
+                  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded flex justify-between items-start shadow-sm">
+                    <div>
+                      <p className="font-bold">Error</p>
+                      <p>{error}</p>
+                    </div>
+                    <button type="button" onClick={() => setError('')} className="text-red-400 hover:text-red-600 p-1">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                {successMessage && (
+                  <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-sm rounded flex justify-between items-start shadow-sm">
+                    <div>
+                      <p className="font-bold">Success</p>
+                      <p>{successMessage}</p>
+                    </div>
+                    <button type="button" onClick={() => setSuccessMessage('')} className="text-emerald-400 hover:text-emerald-600 p-1">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
                 
@@ -729,18 +876,11 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                           <input 
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setFormData(prev => ({ ...prev, propic: reader.result as string }));
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                            onChange={handlePhotoUpload}
+                            disabled={isUploadingPhoto}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer disabled:opacity-50"
                           />
+                          {isUploadingPhoto && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
                         </div>
                       </div>
                       <SelectField
@@ -832,8 +972,6 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                       <InputField label="Country" name="Country" value={formData.Country || ''} onChange={handleChange} />
                       <InputField label="State" name="State" value={formData.State || ''} onChange={handleChange} />
                       <InputField label="City" name="City" value={formData.City || ''} onChange={handleChange} />
-                      {/* <InputField label="District" name="District" value={formData.District || ''} onChange={handleChange} /> */}
-                      {/* <InputField label="Taluka" name="Taluka" value={formData.Taluka || ''} onChange={handleChange} /> */}
                       <InputField label="Area Name" name="vAreaName" value={formData.vAreaName} onChange={handleChange} />
                       <SelectField label="Education Level ID" name="iEducationLevelID" value={formData.iEducationLevelID} onChange={handleChange} options={masterData.educationLevel || []} />
                       <SelectField label="Education Field ID" name="iEducationFieldID" value={formData.iEducationFieldID} onChange={handleChange} options={masterData.educationField || []} />
@@ -913,7 +1051,6 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                   <div className={activeTab === 'family' ? 'block' : 'hidden'}>
                     <h3 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-100 pb-2">Family Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                      {/* <InputField label="Family Type" name="vFamilyType" value={formData.vFamilyType} onChange={handleChange} /> */}
                       <SelectField label="Affluence Level" name="vFamilyAffluenceLevel" value={formData.vFamilyAffluenceLevel} onChange={handleChange} options={familyAffluenceOptions} />
                       <SelectField label="Father Status ID" name="iFatherStatusID" value={formData.iFatherStatusID} onChange={handleChange} options={fmStatusOptions} />
                       <SelectField label="Mother Status ID" name="iMotherStatusID" value={formData.iMotherStatusID} onChange={handleChange} options={fmStatusOptions} />
@@ -921,7 +1058,6 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                       <InputField label="Sisters (nos)" name="nos" type="number" value={formData.nos} onChange={handleChange} />
                       <InputField label="Married Brothers (NobM)" name="NobM" type="number" value={formData.NobM} onChange={handleChange} />
                       <InputField label="Married Sisters (NosM)" name="NosM" type="number" value={formData.NosM} onChange={handleChange} />
-                      {/* <InputField label="Parents Residing" name="vParentsResiding" value={formData.vParentsResiding} onChange={handleChange} /> */}
                       <SelectField label="Family Income ID" name="iFamilyAnnualIncomeID" value={formData.iFamilyAnnualIncomeID} onChange={handleChange} options={familyAnnualIncomeOptions} />
                       <SelectField label="Inter-caste Parents" name="vParentInterCasteMarriage" value={formData.vParentInterCasteMarriage} onChange={handleChange} options={[
                         { label: 'Yes', value: 'Yes' },
@@ -936,7 +1072,6 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                         { label: 'No', value: 'No' }
                       ]} />
                       <SelectField label="Family Property" name="vFamilyProperty" value={formData.vFamilyProperty} onChange={handleChange} options={familyPropertyOptions} />
-                      {/* <InputField label="Detail Relative" name="vDetailRelative" value={formData.vDetailRelative} onChange={handleChange} /> */}
                     </div>
                   </div>
 
@@ -956,6 +1091,90 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                       <SelectField label="Nadi ID" name="NadiId" value={formData.NadiId} onChange={handleChange} options={masterData.nadi || []} />
                     </div>
                   </div>
+
+                  {activeTab === 'photos' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                          <Camera className="w-5 h-5 text-pink-500" /> Photo Gallery
+                        </h3>
+                        
+                        <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Upload New Photo</label>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="file"
+                              accept="image/*"
+                              onChange={handleAdditionalPhotoUpload}
+                              disabled={isUploadingPhoto}
+                              className="block w-full max-w-sm text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 cursor-pointer disabled:opacity-50"
+                            />
+                            {isUploadingPhoto && <Loader2 className="w-5 h-5 animate-spin text-pink-500" />}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {(() => {
+                            const rawPhotos = formData.photos || [];
+                            const latestProfilePhotoId = rawPhotos.length > 0 
+                              ? Math.max(0, ...rawPhotos.filter((p: any) => p.Is_Profile_Photo === 'YES').map((p: any) => p.iPhoto_ID || 0)) 
+                              : 0;
+                            
+                            const validPhotos = rawPhotos.filter((p: any) => !failedImages[p.iPhoto_ID]);
+
+                            return validPhotos.length > 0 ? (
+                              validPhotos.map((photo: any) => (
+                                <div key={photo.iPhoto_ID} className="relative group bg-gray-100 rounded-xl aspect-square flex items-center justify-center border border-gray-200 overflow-hidden shadow-sm">
+                                <img 
+                                  src={
+                                    (() => {
+                                      let url = photo.File_Name;
+                                      if (!url || url === 'null' || url === 'undefined') {
+                                        if (photo.Is_Profile_Photo === 'YES' && formData.propic && formData.propic !== 'null' && formData.propic !== 'undefined') {
+                                          url = formData.propic;
+                                        }
+                                      }
+                                      if (!url || url === 'null' || url === 'undefined') return 'https://placehold.co/400x400/f3f4f6/a1a1aa?text=No+Photo';
+                                      return typeof url === 'string' ? url.replace(/%22/g, '').replace(/"/g, '') : url;
+                                    })()
+                                  } 
+                                  alt="User photo" 
+                                  className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                                  onError={() => {
+                                    setFailedImages(prev => ({ ...prev, [photo.iPhoto_ID]: true }));
+                                  }}
+                                />
+                                <div className="absolute top-2 left-2 flex gap-1">
+                                  <span className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${photo.eStatus === 'Pending' ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                    {photo.eStatus || 'Pending'}
+                                  </span>
+                                  {photo.iPhoto_ID === latestProfilePhotoId && (
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded shadow-sm bg-blue-500 text-white">
+                                      Main
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePhoto(photo.iPhoto_ID)}
+                                  className="absolute bottom-2 right-2 p-2 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 focus:opacity-100"
+                                  title="Delete Photo"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="col-span-full py-12 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                              <Camera className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                              <p>No gallery photos found for this user.</p>
+                            </div>
+                          );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 </div>
               </form>

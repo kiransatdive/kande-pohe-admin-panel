@@ -1,23 +1,139 @@
-import React from 'react';
-import { Eye, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Search, Loader2 } from 'lucide-react';
 import Pagination from '../components/common/Pagination';
+import UserViewModal from '../components/common/UserViewModal';
+import apiClient from '../services/apiClient';
+
+interface User {
+  id: number;
+  First_Name: string | null;
+  Last_Name: string | null;
+  email: string | null;
+  Mobile: string | null;
+  LastLoginTime: number | string | null;
+  created_at: number | string | null;
+  status: number | string | null;
+}
 
 const UserNewlyRegisteredListPage: React.FC = () => {
-  const users = [
-    { id: 1, firstName: 'Kiran', lastName: 'BugB', email: 'maheshsuthardmr@gmail.com', mobile: '8767455876', lastLogin: '10-07-2026', registered: '10-07-2026', status: 'Actived' },
-    { id: 2, firstName: 'Mahee', lastName: 'Sutar', email: '', mobile: '9876543234', lastLogin: '30-06-2026', registered: '30-06-2026', status: 'Actived' },
-    { id: 3, firstName: 'Srinivas', lastName: 'Patki', email: 'hasabnisrd@gmail.com', mobile: '9423395178', lastLogin: '07-06-2026', registered: '07-06-2026', status: 'Actived' },
-    { id: 4, firstName: 'Siddhesh', lastName: 'Palav', email: 'sid.palav1213@gmail.com', mobile: '8433972372', lastLogin: '07-05-2026', registered: '07-05-2026', status: 'Actived' },
-    { id: 5, firstName: 'Karuna', lastName: 'Ghode', email: '', mobile: '9765737424', lastLogin: '22-03-2026', registered: '22-03-2026', status: 'Actived' },
-    { id: 6, firstName: 'Deepak', lastName: 'Bodakhe', email: '', mobile: '9975291051', lastLogin: '16-03-2026', registered: '16-03-2026', status: 'Actived' },
-    { id: 7, firstName: 'Arnav', lastName: 'Karhad', email: 'bdkarhad.ca@rediffmail.com', mobile: '9371063482', lastLogin: '15-03-2026', registered: '15-03-2026', status: 'Actived' },
-    { id: 8, firstName: 'Arvind', lastName: 'Tathe', email: 'tatheavinash2025@gmail.com', mobile: '9762189970', lastLogin: '27-02-2026', registered: '27-02-2026', status: 'Actived' },
-    { id: 9, firstName: 'Krishna', lastName: 'Chavan', email: '', mobile: '7900004133', lastLogin: '29-01-2026', registered: '29-01-2026', status: 'Actived' },
-    { id: 10, firstName: 'Rajesh', lastName: 'Sapkal', email: 'rajesh63in@yahoo.com', mobile: '7304263097', lastLogin: '30-12-2025', registered: '29-12-2025', status: 'Actived' },
-    { id: 11, firstName: 'Anjali', lastName: 'Patil', email: 'anjali79p@gmail.com', mobile: '7415624970', lastLogin: '21-12-2025', registered: '30-05-2025', status: 'Actived' },
-    { id: 12, firstName: 'Omkar', lastName: 'Chavan', email: 'Ranjanachavan1966@gmail.com', mobile: '7021809985', lastLogin: '24-11-2025', registered: '24-11-2025', status: 'Actived' },
-    { id: 13, firstName: 'Jagadande', lastName: 'Mounika', email: 'mjagadande@gmail.com', mobile: '7993541441', lastLogin: '22-11-2025', registered: '22-11-2025', status: 'Actived' },
-  ];
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const fetchUsers = async (page: number, currentSearch = searchQuery) => {
+    setIsLoading(true);
+    setError('');
+    const isSearching = currentSearch.trim().length > 0;
+    try {
+      const response = await apiClient.get('v1/admin/users/new-registered', {
+        params: {
+          page: isSearching ? 1 : page,
+          limit: isSearching ? 100 : 10
+        },
+        headers: {
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+
+      if (response.data.success) {
+        setUsers(response.data.data || []);
+        if (!isSearching && response.data.meta) {
+          setTotalPages(response.data.meta.totalPages || 1);
+          setTotalItems(response.data.meta.total || 0);
+        } else if (!isSearching) {
+          // If meta isn't provided by the endpoint, fallback to basic calculation
+          setTotalItems(response.data.data?.length || 0);
+          setTotalPages(1);
+        }
+      } else {
+        setError('Failed to fetch newly registered users');
+      }
+    } catch (err: any) {
+      console.error('Error fetching newly registered users:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while fetching users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      // If we are searching, we already have all data (up to 500). Don't refetch on page change unless searchQuery itself changed.
+      // We will only refetch if searchQuery changed, OR if we are not searching and currentPage changed.
+      fetchUsers(searchQuery ? 1 : currentPage, searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, searchQuery ? 1 : currentPage]);
+
+  const formatDate = (dateValue?: number | string | null) => {
+    if (!dateValue) return 'N/A';
+    
+    if (typeof dateValue === 'number' || (typeof dateValue === 'string' && /^\d+$/.test(dateValue))) {
+      let timestamp = Number(dateValue);
+      if (timestamp < 10000000000) {
+        timestamp *= 1000;
+      }
+      return new Date(timestamp).toLocaleDateString('en-GB');
+    }
+
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return 'N/A';
+    
+    return d.toLocaleDateString('en-GB');
+  };
+
+  const formatStatus = (status: number | string | null) => {
+    if (status === 0 || status === '0') return 'Deleted';
+    if (status === 1 || status === '1') return 'Active';
+    if (status === 2 || status === '2') return 'Inactive';
+    if (status === 3 || status === '3' || status === 10 || status === '10') return 'Pending';
+    if (status === 4 || status === '4') return 'Disapproved';
+    if (status === 5 || status === '5') return 'Approved';
+    if (status === 6 || status === '6') return 'Blocked';
+    if (!status) return 'Unknown';
+    return String(status);
+  };
+  
+  const getStatusColor = (status: number | string | null) => {
+    if (status === 0 || status === '0') return 'bg-gray-600'; // Deleted
+    if (status === 1 || status === '1') return 'bg-[#00b562]'; // Active
+    if (status === 2 || status === '2') return 'bg-orange-500'; // Inactive
+    if (status === 3 || status === '3' || status === 10 || status === '10') return 'bg-amber-500'; // Pending
+    if (status === 4 || status === '4') return 'bg-red-500'; // Disapproved
+    if (status === 5 || status === '5') return 'bg-[#00b562]'; // Approved
+    if (status === 6 || status === '6') return 'bg-red-700'; // Blocked
+    return 'bg-gray-400';
+  }
+
+  const handlePageChange = (page: number) => {
+    const maxPage = searchQuery ? Math.ceil(filteredUsers.length / 10) || 1 : totalPages;
+    if (page >= 1 && page <= maxPage) {
+      setCurrentPage(page);
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      (user.id?.toString() || '').includes(query) ||
+      (user.First_Name || '').toLowerCase().includes(query) ||
+      (user.Last_Name || '').toLowerCase().includes(query) ||
+      (user.email || '').toLowerCase().includes(query) ||
+      (user.Mobile || '').toLowerCase().includes(query) ||
+      formatStatus(user.status).toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="flex flex-col text-sm w-full">
@@ -28,7 +144,7 @@ const UserNewlyRegisteredListPage: React.FC = () => {
           <div className="flex flex-col gap-2">
             <h2 className="text-[15px] font-medium text-gray-800">User Newly Registered List</h2>
             <div className="text-xs text-gray-500">
-              Showing 1-20 of <span className="font-semibold text-gray-800">89</span> items.
+              Showing {(currentPage - 1) * 10 + 1}-{Math.min(currentPage * 10, searchQuery ? filteredUsers.length : totalItems)} of <span className="font-semibold text-gray-800">{searchQuery ? filteredUsers.length : totalItems}</span> items.
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -36,7 +152,12 @@ const UserNewlyRegisteredListPage: React.FC = () => {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Type to search..." 
+                placeholder="Type to search all pages..." 
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (currentPage !== 1) setCurrentPage(1);
+                }}
                 className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
@@ -45,49 +166,91 @@ const UserNewlyRegisteredListPage: React.FC = () => {
 
         {/* Table */}
         <div className="overflow-x-auto p-4">
-          <table className="w-full text-left text-xs border border-gray-100">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="px-4 py-3 font-semibold text-gray-500 w-12">#</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">First Name</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">Last Name</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">Email</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">Mobile</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">Last Login Date</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">Date of registration</th>
-                <th className="px-4 py-3 font-semibold text-gray-500">Status</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-right w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
-                  <td className="px-4 py-3 text-gray-500">{user.id}</td>
-                  <td className="px-4 py-3 text-gray-700">{user.firstName}</td>
-                  <td className="px-4 py-3 text-gray-700">{user.lastName}</td>
-                  <td className="px-4 py-3 text-[#3b82f6] hover:underline cursor-pointer">{user.email}</td>
-                  <td className="px-4 py-3 text-gray-600">{user.mobile}</td>
-                  <td className="px-4 py-3 text-gray-600">{user.lastLogin}</td>
-                  <td className="px-4 py-3 text-gray-600">{user.registered}</td>
-                  <td className="px-4 py-3">
-                    <span className="bg-[#00b562] text-white text-[11px] font-medium px-3 py-1.5 rounded">
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end">
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
+              <p className="text-gray-500 font-medium">Loading newly registered users...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="text-red-500 mb-2 font-semibold">Error</div>
+              <p className="text-gray-500">{error}</p>
+              <button 
+                onClick={() => fetchUsers(currentPage)}
+                className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+              No newly registered users found matching "{searchQuery}".
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs border border-gray-100">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="px-4 py-3 font-semibold text-gray-500 w-12">#</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">First Name</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Last Name</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Email</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Mobile</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Last Login Date</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Date of registration</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Status</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-right w-12"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(searchQuery ? filteredUsers.slice((currentPage - 1) * 10, currentPage * 10) : filteredUsers).map((user, index) => (
+                  <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-3 text-gray-500">{(currentPage - 1) * 10 + index + 1}</td>
+                    <td className="px-4 py-3 text-gray-700 font-medium">{user.First_Name || 'N/A'}</td>
+                    <td className="px-4 py-3 text-gray-700 font-medium">{user.Last_Name || 'N/A'}</td>
+                    <td className="px-4 py-3 text-[#3b82f6] hover:underline cursor-pointer">{user.email || 'N/A'}</td>
+                    <td className="px-4 py-3 text-gray-600 font-medium">{user.Mobile || 'N/A'}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(user.LastLoginTime)}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(user.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`${getStatusColor(user.status)} text-white text-[11px] font-medium px-3 py-1.5 rounded`}>
+                        {formatStatus(user.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setIsViewModalOpen(true);
+                          }}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
-        <Pagination />
+        {(searchQuery ? filteredUsers.length > 0 : users.length > 0) && (
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={searchQuery ? Math.ceil(filteredUsers.length / 10) || 1 : totalPages}
+            onPageChange={handlePageChange}
+            infoText={`Showing ${(currentPage - 1) * 10 + 1} to ${Math.min(currentPage * 10, searchQuery ? filteredUsers.length : totalItems)} of ${searchQuery ? filteredUsers.length : totalItems} entries`}
+          />
+        )}
       </div>
+
+      <UserViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        userId={selectedUserId || 0}
+      />
     </div>
   );
 };

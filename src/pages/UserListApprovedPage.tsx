@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Edit, Image as ImageIcon, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
+import { Eye, Image as ImageIcon, CheckCircle2, Loader2, XCircle, FileText, AlertTriangle } from 'lucide-react';
 import Pagination from '../components/common/Pagination';
+import UserViewModal from '../components/common/UserViewModal';
+import UserPhotosModal from '../components/common/UserPhotosModal';
+import UserBioModal from '../components/common/UserBioModal';
 import apiClient from '../services/apiClient';
 
 interface User {
@@ -80,6 +83,19 @@ const UserListApprovedPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  const [isDisapproveModalOpen, setIsDisapproveModalOpen] = useState(false);
+  const [userToDisapprove, setUserToDisapprove] = useState<number | null>(null);
+  const [isDisapproving, setIsDisapproving] = useState(false);
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+  const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
+  const [selectedUserForPhotosId, setSelectedUserForPhotosId] = useState<number | null>(null);
+
+  const [isBioModalOpen, setIsBioModalOpen] = useState(false);
+  const [selectedBioUserId, setSelectedBioUserId] = useState<number | null>(null);
+
   const [communities, setCommunities] = useState<Community[]>([]);
   const [heights, setHeights] = useState<Height[]>([]);
   const [maritalStatuses, setMaritalStatuses] = useState<MaritalStatus[]>([]);
@@ -157,6 +173,39 @@ const UserListApprovedPage: React.FC = () => {
       setError(err.response?.data?.message || err.message || 'An error occurred');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDisapproveClick = (id: number) => {
+    setUserToDisapprove(id);
+    setIsDisapproveModalOpen(true);
+  };
+
+  const handleDisapproveConfirm = async () => {
+    if (!userToDisapprove) return;
+    
+    try {
+      setIsDisapproving(true);
+      const response = await apiClient.patch(`v1/admin/users/${userToDisapprove}/status`, {
+        action: 'reject'
+      }, {
+        headers: {
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+      
+      if (response.data?.success || response.status === 200 || response.status === 204) {
+        setIsDisapproveModalOpen(false);
+        setUserToDisapprove(null);
+        fetchUsers(currentPage, appliedFilters); // Refresh the list
+      } else {
+        alert(response.data?.message || 'Failed to disapprove user');
+      }
+    } catch (err: any) {
+      console.error('Error disapproving user:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to disapprove user');
+    } finally {
+      setIsDisapproving(false);
     }
   };
 
@@ -273,13 +322,12 @@ const UserListApprovedPage: React.FC = () => {
   };
 
   useEffect(() => {
+    // If we have active filters, we already fetched up to 100 items. 
+    // We only refetch if appliedFilters changed, or if we don't have filters and currentPage changed.
     const hasActiveFilters = Object.values(appliedFilters).some(v => v !== '');
-    if (hasActiveFilters && users.length > itemsPerPage) {
-      // When searching, we already have up to 100 data locally, no need to re-fetch on page change
-      return;
-    }
-    fetchUsers(currentPage, appliedFilters);
-  }, [currentPage]);
+    fetchUsers(hasActiveFilters ? 1 : currentPage, appliedFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedFilters, Object.values(appliedFilters).some(v => v !== '') ? 1 : currentPage]);
 
   useEffect(() => {
     fetchCommunities();
@@ -401,8 +449,11 @@ const UserListApprovedPage: React.FC = () => {
     <div className="flex flex-col text-sm w-full">
       {/* Search Filters Card */}
       <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mb-6 overflow-hidden border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-[15px] font-medium text-gray-800">Search Filters</h2>
+          <button className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap">
+            Frontend Admin login
+          </button>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
@@ -576,6 +627,13 @@ const UserListApprovedPage: React.FC = () => {
 
       {/* Table Card */}
       <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] overflow-hidden border border-gray-100">
+        {!isLoading && !error && displayTotalItems > 0 && (
+          <div className="px-6 py-4 border-b border-gray-100">
+            <div className="text-sm text-gray-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, displayTotalItems)} of <span className="font-semibold text-gray-800">{displayTotalItems.toLocaleString()}</span> items.
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[11px] min-w-max">
             <thead>
@@ -666,23 +724,48 @@ const UserListApprovedPage: React.FC = () => {
                     <td className="px-3 py-4 text-gray-600">{formatIsoDate(user.LastLoginTime)}</td>
                     <td className="px-3 py-4 text-gray-600">{formatDate(user.created_at)}</td>
                     <td className="px-3 py-4">
-                      <span className="bg-[#00b562] text-white text-[10px] font-medium px-2.5 py-1.5 rounded">
+                      <span className="bg-[#00b562] text-white text-xs font-medium px-3 py-1.5 rounded inline-block min-w-[100px] text-center">
                         Approved
                       </span>
                     </td>
                     <td className="px-3 py-4">
                       <div className="flex items-center gap-1.5">
-                        <button className="text-blue-500 rounded p-1 hover:bg-blue-50" title="View">
+                        <button 
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setIsViewModalOpen(true);
+                          }}
+                          className="text-blue-500 rounded p-1 hover:bg-blue-50" 
+                          title="View"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="text-blue-400 rounded p-1 hover:bg-blue-50" title="Edit">
-                          <Edit className="w-4 h-4" />
+                        <button 
+                          onClick={() => handleDisapproveClick(user.id)}
+                          className="text-red-500 rounded p-1 hover:bg-red-50" 
+                          title="Disapprove"
+                        >
+                          <XCircle className="w-4 h-4" strokeWidth={2.5} />
                         </button>
-                        <button className="text-amber-500 rounded p-1 hover:bg-amber-50" title="Image">
+                        <button 
+                          onClick={() => {
+                            setSelectedUserForPhotosId(user.id);
+                            setIsPhotosModalOpen(true);
+                          }}
+                          className="text-amber-500 rounded p-1 hover:bg-amber-50" 
+                          title="Image"
+                        >
                           <ImageIcon className="w-4 h-4" />
                         </button>
-                        <button className="text-orange-400 rounded p-1 hover:bg-orange-50" title="Delete">
-                          <Trash2 className="w-4 h-4" />
+                        <button 
+                          onClick={() => {
+                            setSelectedBioUserId(user.id);
+                            setIsBioModalOpen(true);
+                          }}
+                          className="text-blue-400 rounded p-1 hover:bg-blue-50" 
+                          title="About User"
+                        >
+                          <FileText className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -697,14 +780,81 @@ const UserListApprovedPage: React.FC = () => {
             totalPages={displayTotalPages}
             currentPage={currentPage}
             onPageChange={(page) => setCurrentPage(page)}
-            infoText={
-              <span>
-                Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, displayTotalItems)} of <span className="font-semibold text-gray-800">{displayTotalItems.toLocaleString()}</span> items.
-              </span>
-            }
           />
         )}
       </div>
+
+      {/* Disapprove Confirmation Modal */}
+      {isDisapproveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">Disapprove User</h3>
+              <p className="text-sm text-center text-gray-500">
+                Are you sure you want to disapprove this user? Their profile will no longer be visible to others.
+              </p>
+            </div>
+            <div className="flex px-6 py-4 bg-gray-50 gap-3 justify-end">
+              <button
+                onClick={() => setIsDisapproveModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+                disabled={isDisapproving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisapproveConfirm}
+                disabled={isDisapproving}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDisapproving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Disapproving...
+                  </>
+                ) : (
+                  'Disapprove User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View User Modal */}
+      <UserViewModal 
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedUserId(null);
+        }}
+        userId={selectedUserId || 0}
+      />
+
+      {/* User Photos Modal */}
+      <UserPhotosModal
+        isOpen={isPhotosModalOpen}
+        onClose={() => {
+          setIsPhotosModalOpen(false);
+          setSelectedUserForPhotosId(null);
+        }}
+        userId={selectedUserForPhotosId || 0}
+        hideApprovalButtons={true}
+      />
+
+      {/* User Bio Modal */}
+      <UserBioModal 
+        isOpen={isBioModalOpen}
+        onClose={() => {
+          setIsBioModalOpen(false);
+          setSelectedBioUserId(null);
+        }}
+        userId={selectedBioUserId || 0}
+        hideApprovalButtons={true}
+      />
     </div>
   );
 };

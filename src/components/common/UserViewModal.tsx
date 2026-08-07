@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, User as UserIcon, MapPin, Heart, Camera, GraduationCap, Users, Star, Settings, Activity, UserPlus, Mail, Phone } from 'lucide-react';
+import { Loader2, User as UserIcon, MapPin, Heart, Camera, GraduationCap, Users, Star, Settings, Activity, UserPlus, Mail, Phone } from 'lucide-react';
 import apiClient from '../../services/apiClient';
 
 interface UserViewModalProps {
@@ -12,6 +12,7 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ userId, isOpen, onClose }
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
   const [subCommunities, setSubCommunities] = useState<any[]>([]);
 
@@ -100,6 +101,20 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ userId, isOpen, onClose }
     return match ? (match.display_name || match.name || match.vName) : id;
   };
 
+  const formatStatus = (status: number | string | null) => {
+    switch(status) {
+      case 0: return 'Deleted';
+      case 1: return 'Active';
+      case 2: return 'Inactive';
+      case 3: return 'Pending';
+      case 4: return 'Disapproved';
+      case 5: return 'Approved';
+      case 6: return 'Blocked';
+      case 10: return 'Pending';
+      default: return String(status ?? 'Unknown');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl flex flex-col max-h-[90vh]">
@@ -114,12 +129,6 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ userId, isOpen, onClose }
               <p className="text-xs text-gray-500">Database ID: {userId}</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Content */}
@@ -172,7 +181,7 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ userId, isOpen, onClose }
                   
                   <div className="flex flex-wrap gap-2 mb-4">
                     <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-xs font-semibold border border-blue-200 shadow-sm flex items-center gap-1">
-                      <Activity className="w-3 h-3" /> Status: {userData.status === 1 ? 'Active' : userData.status === 10 ? 'Pending' : userData.status}
+                      <Activity className="w-3 h-3" /> Status: {formatStatus(userData.status)}
                     </span>
                     <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-md text-xs font-semibold border border-purple-200 shadow-sm flex items-center gap-1">
                       <UserPlus className="w-3 h-3" /> Profile For: {userData.Profile_created_for || 'Self'}
@@ -353,28 +362,51 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ userId, isOpen, onClose }
               {userData.photos && userData.photos.length > 0 && (
                 <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2 mb-4 text-pink-600 font-semibold border-b border-gray-100 pb-2">
-                    <Camera className="w-4 h-4" /> Photo Gallery ({userData.photos.length})
+                    <Camera className="w-4 h-4" /> Photo Gallery {userData.photos && userData.photos.filter((p: any) => !failedImages[p.iPhoto_ID]).length > 0 && `(${userData.photos.filter((p: any) => !failedImages[p.iPhoto_ID]).length})`}
                   </div>
                   <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
-                    {userData.photos.map((photo: any) => (
-                      <div key={photo.iPhoto_ID} className="relative shrink-0 group bg-gray-50 rounded-xl w-48 h-48 flex items-center justify-center border border-gray-200 overflow-hidden">
-                        <img 
-                          src={photo.File_Name} 
-                          alt="User upload" 
-                          className="w-full h-full object-contain drop-shadow-sm group-hover:opacity-90 transition-opacity p-1"
-                        />
-                        <div className="absolute top-2 left-2 flex gap-1">
-                           <span className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${photo.eStatus === 'Pending' ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'}`}>
-                            {photo.eStatus}
-                           </span>
-                           {photo.Is_Profile_Photo === 'YES' && (
-                             <span className="text-[10px] font-bold px-2 py-1 rounded shadow-sm bg-blue-500 text-white">
-                               Main
+                    {(() => {
+                      const rawPhotos = userData.photos || [];
+                      const latestProfilePhotoId = rawPhotos.length > 0 
+                        ? Math.max(0, ...rawPhotos.filter((p: any) => p.Is_Profile_Photo === 'YES').map((p: any) => p.iPhoto_ID || 0)) 
+                        : 0;
+                      
+                      const validPhotos = rawPhotos.filter((p: any) => !failedImages[p.iPhoto_ID]);
+
+                      return validPhotos.map((photo: any) => (
+                        <div key={photo.iPhoto_ID} className="relative shrink-0 group bg-gray-50 rounded-xl w-48 h-48 flex items-center justify-center border border-gray-200 overflow-hidden">
+                          <img 
+                            src={
+                              (() => {
+                                let url = photo.File_Name;
+                                if (!url || url === 'null' || url === 'undefined') {
+                                  if (photo.Is_Profile_Photo === 'YES' && userData.propic && userData.propic !== 'null' && userData.propic !== 'undefined') {
+                                    url = userData.propic;
+                                  }
+                                }
+                                if (!url || url === 'null' || url === 'undefined') return 'https://placehold.co/400x400/f3f4f6/a1a1aa?text=No+Photo';
+                                return typeof url === 'string' ? url.replace(/%22/g, '').replace(/"/g, '') : url;
+                              })()
+                            } 
+                            alt="User upload" 
+                            className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                            onError={() => {
+                              setFailedImages(prev => ({ ...prev, [photo.iPhoto_ID]: true }));
+                            }}
+                          />
+                          <div className="absolute top-2 left-2 flex gap-1">
+                             <span className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${photo.eStatus === 'Pending' ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                              {photo.eStatus}
                              </span>
-                           )}
+                             {photo.iPhoto_ID === latestProfilePhotoId && (
+                               <span className="text-[10px] font-bold px-2 py-1 rounded shadow-sm bg-blue-500 text-white">
+                                 Main
+                               </span>
+                             )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
@@ -386,7 +418,7 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ userId, isOpen, onClose }
         <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex justify-end shrink-0">
           <button 
             onClick={onClose}
-            className="px-8 py-2.5 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-sm"
+            className="px-8 py-2.5 bg-[#3b82f6] text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
           >
             Close Details
           </button>
