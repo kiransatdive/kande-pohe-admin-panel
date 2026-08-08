@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Search } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 
 const OccupationListPage: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
+  
   const items = [
     { id: 1, title: 'Banking and Financial Company', desc: 'We at Kande-Pohe Marathi...', metaTitle: '96Kuli Maratha brides and...', metaDesc: 'We at Kande-Pohe Marathi...', metaKeyword: '96Kuli Maratha Maratha...' },
     { id: 2, title: 'Business / Self Employed', desc: 'We at Kande-Pohe Marathi...', metaTitle: 'Self employed and businessm...', metaDesc: 'We at Kande-Pohe Marathi...', metaKeyword: 'Maratha Matrimony, Pune...' },
@@ -31,15 +30,7 @@ const OccupationListPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Type to search..." 
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-              />
             </div>
-          </div>
         </div>
 
         {/* Table */}

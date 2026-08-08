@@ -27,8 +27,9 @@ const WorkingWithListPage: React.FC = () => {
   const [deleteError, setDeleteError] = useState('');
 
   const [fields, setFields] = useState<WorkingWith[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+    const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchFields = async () => {
@@ -61,7 +62,7 @@ const WorkingWithListPage: React.FC = () => {
   }, []);
 
   const filteredFields = fields.filter((item) => {
-    const term = searchTerm.toLowerCase();
+    const term = searchQuery.toLowerCase();
     return (
       item.id.toString().includes(term) ||
       item.name.toLowerCase().includes(term) ||
@@ -150,6 +151,7 @@ const WorkingWithListPage: React.FC = () => {
     setFieldToView(field);
     setIsViewModalOpen(true);
   };
+  
 
   return (
     <div className="flex flex-col text-sm w-full relative">
@@ -163,15 +165,15 @@ const WorkingWithListPage: React.FC = () => {
               Showing <span className="font-semibold text-gray-800">{filteredFields.length}</span> items.
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Type to search..." 
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+                placeholder="Type to search all pages..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-base rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
             <button 
@@ -182,7 +184,7 @@ const WorkingWithListPage: React.FC = () => {
                 setCreateError('');
                 setIsModalOpen(true);
               }}
-              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap"
             >
               Create Working With
             </button>
@@ -313,7 +315,7 @@ const WorkingWithListPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isCreating}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors disabled:opacity-50 flex items-center"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
                   >
                     {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {isCreating ? (fieldToEdit ? 'Saving...' : 'Creating...') : (fieldToEdit ? 'Save Changes' : 'Create')}

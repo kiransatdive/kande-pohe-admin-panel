@@ -12,7 +12,12 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401, 403 globally
+    // Handle 401 globally by clearing auth and redirecting
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('adminData');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );

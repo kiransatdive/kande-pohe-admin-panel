@@ -266,19 +266,9 @@ const AdminPage: React.FC = () => {
           <h2 className="text-[15px] font-medium text-gray-800">Admin Table List</h2>
           <div className="flex items-center gap-4">
             {/* Unified Search Box */}
-            <div className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Type to search..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-              />
-            </div>
             <button 
               onClick={handleOpenCreateModal}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-md text-base font-medium transition-colors shadow-sm"
             >
               Create Admin
             </button>
@@ -417,7 +407,7 @@ const AdminPage: React.FC = () => {
                   <button 
                     onClick={handleCreateSubmit}
                     disabled={isCreating}
-                    className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-6 py-2 rounded text-sm font-medium transition-colors"
+                    className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white px-6 py-2 rounded text-sm font-medium transition-colors"
                   >
                     {isCreating ? 'Creating...' : 'Create'}
                   </button>
@@ -558,7 +548,7 @@ const AdminPage: React.FC = () => {
                   <button 
                     onClick={handleEditSubmit} 
                     disabled={isUpdating}
-                    className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-6 py-2 rounded text-sm font-medium transition-colors"
+                    className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white px-6 py-2 rounded text-sm font-medium transition-colors"
                   >
                     {isUpdating ? 'Updating...' : 'Save Changes'}
                   </button>

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Search } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 
 const SiteMessageListPage: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
+  
   const items = [
     { id: 1, action: 'ACCEPT_INTEREST', type: 'TITLE', value: 'Accept Interest', subject: 'For Accept Interest Title' },
     { id: 2, action: 'ACCEPT_INTEREST', type: 'SUCESS', value: 'Interest request accepted successfully.', subject: 'Interest Request Accept For Success' },
@@ -46,14 +45,6 @@ const SiteMessageListPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Type to search..." 
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-              />
-            </div>
             {/* The screenshot doesn't explicitly show a Create button, but typically there is one or we just omit if not needed. Let's keep it consistent. */}
           </div>
         </div>

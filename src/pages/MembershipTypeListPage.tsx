@@ -18,7 +18,7 @@ const MembershipTypeListPage: React.FC = () => {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap"
             >
               Create Membership Type
             </button>
@@ -91,7 +91,7 @@ const MembershipTypeListPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors"
                   >
                     Create
                   </button>

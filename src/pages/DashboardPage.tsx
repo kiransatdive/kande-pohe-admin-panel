@@ -1,292 +1,431 @@
-import React from 'react';
-import { Users, UserCheck, Clock, UserPlus, MoreHorizontal, IndianRupee, Star, FileText, Camera } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, UserCheck, Clock, UserPlus, IndianRupee, Star, FileText, Camera, ArrowUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import DateRangeDropdown from '../components/common/DateRangeDropdown';
+import { getDashboardData } from '../services/dashboardService';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [dateRange, setDateRange] = useState('28');
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['dashboardData', dateRange],
+    queryFn: () => getDashboardData(dateRange)
+  });
+
+  const dashboard = data?.data;
+
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-full text-gray-500 font-medium">Loading dashboard data...</div>;
+  }
+
+  if (error || !dashboard) {
+    console.error("Dashboard error:", error, "data:", data);
+    return (
+      <div className="flex flex-col justify-center items-center h-full gap-2">
+        <div className="text-red-500 font-medium">Error loading dashboard data.</div>
+        <div className="text-sm text-gray-500 max-w-lg text-center">
+          {error instanceof Error ? error.message : JSON.stringify(error)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col flex-1 gap-6 text-sm">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Card 1 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#3bc0f9] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">All Users</div>
-            <div className="text-2xl font-bold text-[#3bc0f9] mb-1">4805</div>
-            {/* <div className="text-xs text-gray-400">200 from last week</div> */}
+        <div 
+          onClick={() => navigate('/user-list')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#0095ff] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #0095ff20 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#0095ff] text-white shadow-lg shadow-[#0095ff]/40 shrink-0">
+              <Users className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">All Users</div>
+              <div className="text-[36px] font-bold text-[#0095ff] tracking-tight leading-none">{dashboard.users?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#3bc0f9] to-[#046df1] text-white shadow-[0_4px_10px_rgba(59,192,249,0.3)]">
-            <Users className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end gap-1.5 mt-auto pt-4 relative z-10">
+            <div className="flex items-center gap-1 text-[13px] font-bold text-[#10b981]">
+              <div className="w-4 h-4 rounded-full bg-[#10b981]/15 flex items-center justify-center shrink-0">
+                <ArrowUp className="w-3 h-3" strokeWidth={3} />
+              </div>
+              {dashboard.users?.monthly?.toLocaleString() || 0}
+            </div>
+            <span className="text-[11px] text-gray-400 font-medium ml-0.5">from last 30 days</span>
           </div>
         </div>
 
         {/* Card 2 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#ff4a73] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">Approved Users</div>
-            <div className="text-2xl font-bold text-[#ff4a73] mb-1">84,245</div>
-            {/* <div className="text-xs text-gray-400">+5.4% from last week</div> */}
+        <div 
+          onClick={() => navigate('/user-list-approved')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#ff4a73] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #ff4a7320 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#ff4a73] text-white shadow-lg shadow-[#ff4a73]/40 shrink-0">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">Approved Users</div>
+              <div className="text-[36px] font-bold text-[#ff4a73] tracking-tight leading-none">{dashboard.approvedUsers?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#ff4a73] to-[#d6214b] text-white shadow-[0_4px_10px_rgba(255,74,115,0.3)]">
-            <UserCheck className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end mt-auto pt-4 border-t border-gray-100 relative z-10">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Daily</span>
+              <span className="text-[13px] font-bold text-[#ff4a73]">{dashboard.approvedUsers?.daily?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Weekly</span>
+              <span className="text-[13px] font-bold text-[#ff4a73]">{dashboard.approvedUsers?.weekly?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Monthly</span>
+              <span className="text-[13px] font-bold text-[#ff4a73]">{dashboard.approvedUsers?.monthly?.toLocaleString() || 0}</span>
+            </div>
           </div>
         </div>
 
         {/* Card 3 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#2ed573] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">Pending Approval Users</div>
-            <div className="text-2xl font-bold text-[#2ed573] mb-1">348</div>
-            {/* <div className="text-xs text-gray-400">-4.5% from last week</div> */}
+        <div 
+          onClick={() => navigate('/user-list-pending-approval')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#2ed573] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #2ed57320 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#2ed573] text-white shadow-lg shadow-[#2ed573]/40 shrink-0">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">Pending Approval</div>
+              <div className="text-[36px] font-bold text-[#2ed573] tracking-tight leading-none">{dashboard.pendingApprovalUsers?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#2ed573] to-[#09a04a] text-white shadow-[0_4px_10px_rgba(46,213,115,0.3)]">
-            <Clock className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end mt-auto pt-4 border-t border-gray-100 relative z-10">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Daily</span>
+              <span className="text-[13px] font-bold text-[#2ed573]">{dashboard.pendingApprovalUsers?.daily?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Weekly</span>
+              <span className="text-[13px] font-bold text-[#2ed573]">{dashboard.pendingApprovalUsers?.weekly?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Monthly</span>
+              <span className="text-[13px] font-bold text-[#2ed573]">{dashboard.pendingApprovalUsers?.monthly?.toLocaleString() || 0}</span>
+            </div>
           </div>
         </div>
 
         {/* Card 4 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#ffa502] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">Newly Register Users</div>
-            <div className="text-2xl font-bold text-[#ffa502] mb-1">800</div>
-            {/* <div className="text-xs text-gray-400">+8.4% from last week</div> */}
+        <div 
+          onClick={() => navigate('/user-list-newly-registered')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#ffa502] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #ffa50220 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#ffa502] text-white shadow-lg shadow-[#ffa502]/40 shrink-0">
+              <UserPlus className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">Newly Registered</div>
+              <div className="text-[36px] font-bold text-[#ffa502] tracking-tight leading-none">{dashboard.newUsers?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#ffa502] to-[#df8300] text-white shadow-[0_4px_10px_rgba(255,165,2,0.3)]">
-            <UserPlus className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end mt-auto pt-4 border-t border-gray-100 relative z-10">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Daily</span>
+              <span className="text-[13px] font-bold text-[#ffa502]">{dashboard.newUsers?.daily?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Weekly</span>
+              <span className="text-[13px] font-bold text-[#ffa502]">{dashboard.newUsers?.weekly?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Monthly</span>
+              <span className="text-[13px] font-bold text-[#ffa502]">{dashboard.newUsers?.monthly?.toLocaleString() || 0}</span>
+            </div>
           </div>
         </div>
 
         {/* Card 5 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#00cec9] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">User Bio Users</div>
-            <div className="text-2xl font-bold text-[#00cec9] mb-1">1,436</div>
+        <div 
+          onClick={() => navigate('/user-list-bio')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#00cec9] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #00cec920 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#00cec9] text-white shadow-lg shadow-[#00cec9]/40 shrink-0">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">User Bio</div>
+              <div className="text-[36px] font-bold text-[#00cec9] tracking-tight leading-none">{dashboard.bioUsers?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#00cec9] to-[#01a3a4] text-white shadow-[0_4px_10px_rgba(0,206,201,0.3)]">
-            <FileText className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end gap-1.5 mt-auto pt-4 relative z-10">
+            <div className="flex items-center gap-1 text-[13px] font-bold text-[#10b981]">
+              <div className="w-4 h-4 rounded-full bg-[#10b981]/15 flex items-center justify-center shrink-0">
+                <ArrowUp className="w-3 h-3" strokeWidth={3} />
+              </div>
+              {dashboard.bioUsers?.monthly?.toLocaleString() || 0}
+            </div>
+            <span className="text-[11px] text-gray-400 font-medium ml-0.5">from last 30 days</span>
           </div>
         </div>
 
         {/* Card 6 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#fd79a8] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">Photo Album Users</div>
-            <div className="text-2xl font-bold text-[#fd79a8] mb-1">104</div>
+        <div 
+          onClick={() => navigate('/user-list-photo-album')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#fd79a8] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #fd79a820 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#fd79a8] text-white shadow-lg shadow-[#fd79a8]/40 shrink-0">
+              <Camera className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">Photo Album</div>
+              <div className="text-[36px] font-bold text-[#fd79a8] tracking-tight leading-none">{dashboard.photoAlbumUsers?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#fd79a8] to-[#e84393] text-white shadow-[0_4px_10px_rgba(253,121,168,0.3)]">
-            <Camera className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end gap-1.5 mt-auto pt-4 relative z-10">
+            <div className="flex items-center gap-1 text-[13px] font-bold text-[#10b981]">
+              <div className="w-4 h-4 rounded-full bg-[#10b981]/15 flex items-center justify-center shrink-0">
+                <ArrowUp className="w-3 h-3" strokeWidth={3} />
+              </div>
+              {dashboard.photoAlbumUsers?.monthly?.toLocaleString() || 0}
+            </div>
+            <span className="text-[11px] text-gray-400 font-medium ml-0.5">from last 30 days</span>
           </div>
         </div>
 
         {/* Card 7 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#a55eea] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">Subscriber Counts</div>
-            <div className="text-2xl font-bold text-[#a55eea] mb-1">2,150</div>
+        <div 
+          onClick={() => navigate('/admin/subscription-management')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#a55eea] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #a55eea20 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#a55eea] text-white shadow-lg shadow-[#a55eea]/40 shrink-0">
+              <Star className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">Subscribers</div>
+              <div className="text-[36px] font-bold text-[#a55eea] tracking-tight leading-none">{dashboard.subscribers?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#a55eea] to-[#8854d0] text-white shadow-[0_4px_10px_rgba(165,94,234,0.3)]">
-            <Star className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end mt-auto pt-4 border-t border-gray-100 relative z-10">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Daily</span>
+              <span className="text-[13px] font-bold text-[#a55eea]">{dashboard.subscribers?.daily?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Weekly</span>
+              <span className="text-[13px] font-bold text-[#a55eea]">{dashboard.subscribers?.weekly?.toLocaleString() || 0}</span>
+            </div>
+            <div className="w-px h-6 bg-gray-100 mx-2"></div>
+            <div className="flex flex-col items-end pl-2">
+              <span className="text-[10px] font-medium text-gray-500 mb-1">Monthly</span>
+              <span className="text-[13px] font-bold text-[#a55eea]">{dashboard.subscribers?.monthly?.toLocaleString() || 0}</span>
+            </div>
           </div>
         </div>
 
         {/* Card 8 */}
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-[#4b7bec] p-5 flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 font-medium mb-1">Subscription Revenue</div>
-            <div className="text-2xl font-bold text-[#4b7bec] mb-1">₹ 1,50,000</div>
+        <div 
+          onClick={() => navigate('/admin/subscription-management')}
+          className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border-l-[4px] border-[#4b7bec] p-5 flex flex-col relative overflow-hidden min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <div className="absolute bottom-0 right-0 left-0 h-16 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at bottom right, #4b7bec20 0%, transparent 70%)' }}></div>
+          <div className="flex items-center justify-between relative z-10">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#4b7bec] text-white shadow-lg shadow-[#4b7bec]/40 shrink-0">
+              <IndianRupee className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[15px] font-bold text-gray-800 mb-1">Revenue</div>
+              <div className="text-[36px] font-bold text-[#4b7bec] tracking-tight leading-none">₹ {dashboard.subscriptionRevenue?.total?.toLocaleString() || 0}</div>
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#4b7bec] to-[#3867d6] text-white shadow-[0_4px_10px_rgba(75,123,236,0.3)]">
-            <IndianRupee className="w-5 h-5" />
+          
+          <div className="flex items-center justify-end gap-1.5 mt-auto pt-4 relative z-10">
+            <div className="flex items-center gap-1 text-[13px] font-bold text-[#10b981]">
+              <div className="w-4 h-4 rounded-full bg-[#10b981]/15 flex items-center justify-center shrink-0">
+                <ArrowUp className="w-3 h-3" strokeWidth={3} />
+              </div>
+              ₹ {dashboard.subscriptionRevenue?.monthly?.toLocaleString() || 0}
+            </div>
+            <span className="text-[11px] text-gray-400 font-medium ml-0.5">from last 30 days</span>
           </div>
         </div>
       </div>
 
       {/* Main Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[450px]">
         
-        {/* Sales Overview Card */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] overflow-hidden flex flex-col">
-          <div className="p-6 pb-2 flex flex-col flex-1">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-8">
-                <h2 className="text-base font-semibold text-gray-800">User Analytics</h2>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="flex gap-4 mr-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
-                    <div className="w-2 h-2 rounded-full bg-[#f97316]"></div>
-                    New Users
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
-                    <div className="w-2 h-2 rounded-full bg-[#1e40af]"></div>
-                    Active Users
-                  </div>
-                </div>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
+        {/* User Analytics Card */}
+        <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-5 flex flex-col">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-[15px] font-bold text-gray-800 mb-0.5">User Analytics</h2>
+              <div className="text-[11px] text-gray-400">Overview of new vs active users</div>
             </div>
-
-            <div className="relative w-full mt-6 mb-4 flex-1 min-h-[250px]">
-              {/* Y Axis Labels */}
-              <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between text-[10px] text-gray-400 font-medium">
-                <span>30K</span>
-                <span>20K</span>
-                <span>10K</span>
-                <span>0</span>
-              </div>
-              
-              <div className="absolute left-10 right-4 top-2 bottom-8">
-                {/* Horizontal Grid lines */}
-                <div className="absolute inset-0 flex flex-col justify-between">
-                  <div className="w-full border-t border-gray-100/60"></div>
-                  <div className="w-full border-t border-gray-100/60"></div>
-                  <div className="w-full border-t border-gray-100/60"></div>
-                  <div className="w-full border-t border-gray-100"></div>
-                </div>
-
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 600 200" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="orangeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f97316" stopOpacity="0.2"/>
-                      <stop offset="100%" stopColor="#f97316" stopOpacity="0"/>
-                    </linearGradient>
-                    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1e40af" stopOpacity="0.15"/>
-                      <stop offset="100%" stopColor="#1e40af" stopOpacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  
-                  {/* Area Fills */}
-                  <path d="M 0,110 C 80,180 150,180 230,160 C 310,140 350,60 450,55 C 500,50 550,65 600,65 L 600,200 L 0,200 Z" fill="url(#blueGrad)" vectorEffect="non-scaling-stroke" />
-                  <path d="M 0,170 C 50,100 150,70 230,80 C 310,90 350,170 450,160 C 520,150 550,80 600,50 L 600,200 L 0,200 Z" fill="url(#orangeGrad)" vectorEffect="non-scaling-stroke" />
-                  
-                  {/* Blue Line Solid */}
-                  <path d="M 0,110 C 80,180 150,180 230,160 C 310,140 350,60 450,55" fill="none" stroke="#1e40af" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-                  {/* Blue Line Dotted */}
-                  <path d="M 450,55 C 500,50 550,65 600,65" fill="none" stroke="#1e40af" strokeWidth="2.5" strokeDasharray="4,4" vectorEffect="non-scaling-stroke" />
-                  
-                  {/* Orange Line */}
-                  <path d="M 0,170 C 50,100 150,70 230,80 C 310,90 350,170 450,160 C 520,150 550,80 600,50" fill="none" stroke="#fb923c" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-
-                  {/* Tooltip Dot */}
-                  <circle cx="212" cy="164" r="3" fill="white" stroke="#1e40af" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-                </svg>
-
-                {/* Tooltip UI overlay */}
-                <div className="absolute left-[35%] top-[68%] -translate-x-1/2 -translate-y-[150%]">
-                  <div className="bg-[#1e40af] text-white text-[11px] font-semibold py-1 px-2.5 rounded-md shadow-md relative">
-                    15,765
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1e40af] rotate-45"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* X Axis Labels */}
-              <div className="absolute left-10 right-4 bottom-0 flex justify-between text-[10px] text-gray-400 font-medium px-4">
-                <span>Jan</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Apr</span>
-                <span>May</span>
-                <span>Jun</span>
-                <span>Jul</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <DateRangeDropdown value={dateRange} onChange={setDateRange} />
             </div>
+          </div>
+
+          <div className="flex items-center gap-6 mb-8">
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+              <div className="w-2 h-2 rounded-full bg-[#ff7f3f]"></div>
+              New Users
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+              <div className="w-2 h-2 rounded-full bg-[#3b82f6]"></div>
+              Active Users
+            </div>
+          </div>
+
+          <div className="relative w-full flex-1 min-h-[320px]">
+             {!dashboard.userAnalytics || dashboard.userAnalytics.length === 0 ? (
+               <div className="absolute inset-0 flex flex-col justify-center items-center text-gray-400">
+                 <Users className="w-8 h-8 mb-2 opacity-20" />
+                 <span className="text-sm font-medium">No user analytics data available</span>
+               </div>
+             ) : (
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart
+                   data={dashboard.userAnalytics}
+                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                 >
+                   <defs>
+                     <linearGradient id="colorNew" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#ff7f3f" stopOpacity={0.2} />
+                       <stop offset="95%" stopColor="#ff7f3f" stopOpacity={0} />
+                     </linearGradient>
+                     <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                     </linearGradient>
+                   </defs>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                   <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#9ca3af' }}
+                      tickFormatter={(val) => {
+                        if(!val) return '';
+                        const d = new Date(val);
+                        return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}`;
+                      }}
+                   />
+                   <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#9ca3af' }} 
+                   />
+                   <Tooltip 
+                     contentStyle={{ borderRadius: '8px', border: '1px solid #f1f5f9', fontSize: '12px' }}
+                   />
+                   <Area 
+                     type="monotone" 
+                     dataKey="newUsers" 
+                     stroke="#ff7f3f" 
+                     fillOpacity={1} 
+                     fill="url(#colorNew)" 
+                     strokeWidth={2}
+                   />
+                   <Area 
+                     type="monotone" 
+                     dataKey="activeUsers" 
+                     stroke="#3b82f6" 
+                     fillOpacity={1} 
+                     fill="url(#colorActive)" 
+                     strokeWidth={2}
+                   />
+                 </AreaChart>
+               </ResponsiveContainer>
+             )}
           </div>
         </div>
 
         {/* Subscription Revenue Card */}
-        <div className="lg:col-span-1 bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-6 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-base font-semibold text-gray-800">Subscription Revenue</h2>
-            <button className="text-gray-400 hover:text-gray-600">
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="relative w-full mt-2 flex-1 min-h-[250px]">
-            {/* Y Axis Labels */}
-            <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] text-gray-400 font-medium">
-              <span>1,500</span>
-              <span>1,000</span>
-              <span>500</span>
-              <span>0</span>
+        <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-5 flex flex-col">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h2 className="text-[15px] font-bold text-gray-800 mb-0.5">Subscription Revenue</h2>
+              <div className="text-[11px] text-gray-400">Revenue trend over time</div>
             </div>
-
-            <div className="absolute left-10 right-2 top-2 bottom-6">
-              {/* Horizontal Grid lines */}
-              <div className="absolute inset-0 flex flex-col justify-between">
-                <div className="w-full border-t border-gray-100/60"></div>
-                <div className="w-full border-t border-gray-100/60"></div>
-                <div className="w-full border-t border-gray-100/60"></div>
-                <div className="w-full border-t border-gray-100"></div>
-              </div>
-
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 300 150" preserveAspectRatio="none">
-                {/* Bars */}
-                {[
-                  { x: 12.5, y: 140, h: 10 },
-                  { x: 37.5, y: 125, h: 25 },
-                  { x: 62.5, y: 110, h: 40 },
-                  { x: 87.5, y: 95, h: 55 },
-                  { x: 112.5, y: 85, h: 65 },
-                  { x: 137.5, y: 70, h: 80 },
-                  { x: 162.5, y: 55, h: 95 },
-                  { x: 187.5, y: 45, h: 105 },
-                  { x: 212.5, y: 35, h: 115 },
-                  { x: 237.5, y: 25, h: 125 },
-                  { x: 262.5, y: 15, h: 135 },
-                  { x: 287.5, y: 5, h: 145 },
-                ].map((bar, i) => (
-                  <rect key={i} x={bar.x - 6} y={bar.y} width="12" height={bar.h} fill="#3b82f6" rx="1" vectorEffect="non-scaling-stroke" />
-                ))}
-
-                {/* Line */}
-                <path d="M 12.5,135 L 37.5,120 L 62.5,105 L 87.5,90 L 112.5,80 L 137.5,65 L 162.5,50 L 187.5,40 L 212.5,30 L 237.5,20 L 262.5,10 L 287.5,0" fill="none" stroke="#84cc16" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-                
-                {/* Line Dots */}
-                {[
-                  { x: 12.5, y: 135 },
-                  { x: 37.5, y: 120 },
-                  { x: 62.5, y: 105 },
-                  { x: 87.5, y: 90 },
-                  { x: 112.5, y: 80 },
-                  { x: 137.5, y: 65 },
-                  { x: 162.5, y: 50 },
-                  { x: 187.5, y: 40 },
-                  { x: 212.5, y: 30 },
-                  { x: 237.5, y: 20 },
-                  { x: 262.5, y: 10 },
-                  { x: 287.5, y: 0 },
-                ].map((dot, i) => (
-                  <circle key={i} cx={dot.x} cy={dot.y} r="3.5" fill="#84cc16" vectorEffect="non-scaling-stroke" />
-                ))}
-              </svg>
-            </div>
-
-            {/* X Axis Labels */}
-            <div className="absolute left-10 right-2 bottom-0 flex justify-between text-[9px] text-gray-400 font-medium">
-              <span>Jan 2026</span>
-              <span>Apr 2026</span>
-              <span>Jul 2026</span>
-              <span>Oct 2026</span>
+            <div className="flex items-center gap-3">
+              <DateRangeDropdown value={dateRange} onChange={setDateRange} />
             </div>
           </div>
 
-          <div className="mt-auto pt-6">
-            <div className="flex justify-center items-center gap-6">
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></div>
-                Subscribers
-              </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></div>
-                Revenue
-              </div>
-            </div>
+          <div className="relative w-full flex-1 min-h-[320px] mt-auto">
+             {!dashboard.subscriptionRevenueAnalytics || dashboard.subscriptionRevenueAnalytics.length === 0 ? (
+               <div className="absolute inset-0 flex flex-col justify-center items-center text-gray-400">
+                 <IndianRupee className="w-8 h-8 mb-2 opacity-20" />
+                 <span className="text-sm font-medium">No revenue data available</span>
+               </div>
+             ) : (
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart
+                   data={dashboard.subscriptionRevenueAnalytics}
+                   margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                 >
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                   <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#9ca3af' }}
+                      tickFormatter={(val) => {
+                        if(!val) return '';
+                        const d = new Date(val);
+                        return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}`;
+                      }}
+                   />
+                   <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#9ca3af' }} 
+                      tickFormatter={(val) => `₹ ${val >= 1000 ? (val / 1000) + 'k' : val}`}
+                   />
+                   <Tooltip 
+                     contentStyle={{ borderRadius: '8px', border: '1px solid #f1f5f9', fontSize: '12px' }}
+                     cursor={{ fill: '#f1f5f9' }}
+                   />
+                   <Bar dataKey="revenue" fill="#7a9bf8" radius={[2, 2, 0, 0]} barSize={12} />
+                 </BarChart>
+               </ResponsiveContainer>
+             )}
           </div>
         </div>
-
       </div>
     </div>
   );

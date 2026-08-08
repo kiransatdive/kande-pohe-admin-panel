@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Edit, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { Eye, Edit, Trash2, Loader2, AlertTriangle, Search } from 'lucide-react';
 import apiClient from '../services/apiClient';
 
 interface Weightege {
@@ -10,6 +10,8 @@ interface Weightege {
 
 const WeightegeListPage: React.FC = () => {
   const [weighteges, setWeighteges] = useState<Weightege[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -222,6 +224,14 @@ const WeightegeListPage: React.FC = () => {
       setIsDeleting(false);
     }
   };
+  const filteredData = weighteges.filter((item: any) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return Object.values(item).some(val => 
+      val !== null && val !== undefined && val.toString().toLowerCase().includes(query)
+    );
+  });
+
 
   return (
     <div className="flex flex-col text-sm w-full relative">
@@ -232,13 +242,23 @@ const WeightegeListPage: React.FC = () => {
           <div className="flex flex-col gap-2">
             <h2 className="text-[15px] font-medium text-gray-800">User Weightege List</h2>
             <div className="text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-800">{weighteges.length}</span> items.
+              Showing <span className="font-semibold text-gray-800">{filteredData.length}</span> items.
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Type to search all pages..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-base rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+              />
+            </div>
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap"
             >
               Create Wightege
             </button>
@@ -272,14 +292,14 @@ const WeightegeListPage: React.FC = () => {
                     {error}
                   </td>
                 </tr>
-              ) : weighteges.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500 font-medium">
                     No weightege data found.
                   </td>
                 </tr>
               ) : (
-                weighteges.map((item) => (
+                filteredData.map((item) => (
                   <tr key={item.iWightege} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3 text-gray-500 text-center">{item.iWightege}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{item.vWightegeName}</td>
@@ -356,7 +376,7 @@ const WeightegeListPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isCreating}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {isCreating ? (
                       <>

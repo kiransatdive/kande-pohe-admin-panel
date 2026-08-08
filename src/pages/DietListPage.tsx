@@ -13,6 +13,8 @@ const DietListPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [diets, setDiets] = useState<Diet[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [totalItems, setTotalItems] = useState(0);
@@ -25,8 +27,7 @@ const DietListPage: React.FC = () => {
   const [newDietStatus, setNewDietStatus] = useState('Active');
   const [isCreating, setIsCreating] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
-
+  
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [dietToDelete, setDietToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,7 +45,7 @@ const DietListPage: React.FC = () => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await apiClient.get(`v1/admin/master/master-diet?page=${page}&limit=${limit}`, {
+      const response = await apiClient.get(`v1/admin/master/master-diet?page=${page}&limit=${searchQuery ? 1000 : limit}`, {
         headers: {
           'bypass-tunnel-reminder': 'true'
         }
@@ -66,8 +67,13 @@ const DietListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDiets(currentPage);
-  }, [currentPage]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchDiets(searchQuery ? 1 : currentPage);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, searchQuery ? 1 : currentPage]);
 
   const handleDeleteClick = (id: number) => {
     setDietToDelete(id);
@@ -195,6 +201,14 @@ const DietListPage: React.FC = () => {
       (item.iDietID && item.iDietID.toString().includes(query))
     );
   });
+  const filteredData = diets.filter((item: any) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return Object.values(item).some(val => 
+      val !== null && val !== undefined && val.toString().toLowerCase().includes(query)
+    );
+  });
+
 
 
 
@@ -210,20 +224,20 @@ const DietListPage: React.FC = () => {
               Showing page {currentPage} of {totalPages} <span className="font-semibold text-gray-800">({totalItems} items total)</span>.
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Type to search..." 
+                placeholder="Type to search all pages..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-base rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap"
             >
               Create Diet
             </button>
@@ -264,7 +278,7 @@ const DietListPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredDiets.map((item) => (
+                (searchQuery ? filteredDiets.slice((currentPage - 1) * 10, currentPage * 10) : filteredDiets).map((item) => (
                   <tr key={item.iDietID} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3 text-gray-500">{item.iDietID}</td>
                     <td className="px-4 py-3 text-gray-700">{item.vName}</td>
@@ -300,10 +314,10 @@ const DietListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {!isLoading && !error && totalPages > 1 && (
+        {!isLoading && !error && (searchQuery ? Math.ceil(filteredDiets.length / 10) || 1 : totalPages) > 1 && (
           <div className="px-4 pb-4">
             <Pagination 
-              totalPages={totalPages} 
+              totalPages={searchQuery ? Math.ceil(filteredDiets.length / 10) || 1 : totalPages} 
               currentPage={currentPage} 
               onPageChange={setCurrentPage} 
             />
@@ -351,7 +365,7 @@ const DietListPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isCreating}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {isCreating ? (
                       <>
@@ -457,7 +471,7 @@ const DietListPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isUpdating}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {isUpdating ? (
                       <>

@@ -48,7 +48,7 @@ const ReligionListPage: React.FC = () => {
       const response = await apiClient.get('v1/admin/master/religion', {
         params: {
           page,
-          limit: 10
+          limit: searchQuery ? 1000 : 10
         },
         headers: {
           'bypass-tunnel-reminder': 'true'
@@ -74,8 +74,13 @@ const ReligionListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchReligions(currentPage);
-  }, [currentPage]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchReligions(searchQuery ? 1 : currentPage);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, searchQuery ? 1 : currentPage]);
 
   const handleDeleteClick = (id: number) => {
     setReligionToDelete(id);
@@ -223,15 +228,15 @@ const ReligionListPage: React.FC = () => {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Type to search..." 
+                placeholder="Type to search all pages..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-base rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
               />
             </div>
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-[#00b562] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#009650] transition-colors whitespace-nowrap"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-base font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all whitespace-nowrap"
             >
               Create Religion
             </button>
@@ -272,7 +277,7 @@ const ReligionListPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredReligions.map((religion, index) => (
+                (searchQuery ? filteredReligions.slice((currentPage - 1) * 10, currentPage * 10) : filteredReligions).map((religion, index) => (
                   <tr key={religion.iReligion_ID} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="px-4 py-3 text-gray-500 text-center font-medium">
                       {(currentPage - 1) * 10 + index + 1}
@@ -318,10 +323,10 @@ const ReligionListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {!isLoading && !error && totalPages > 1 && (
+        {!isLoading && !error && (searchQuery ? Math.ceil(filteredReligions.length / 10) || 1 : totalPages) > 1 && (
           <div className="px-4 pb-4">
             <Pagination 
-              totalPages={totalPages} 
+              totalPages={searchQuery ? Math.ceil(filteredReligions.length / 10) || 1 : totalPages} 
               currentPage={currentPage} 
               onPageChange={setCurrentPage} 
             />
@@ -369,7 +374,7 @@ const ReligionListPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isCreating}
-                    className="bg-[#00b562] text-white px-6 py-2.5 rounded font-medium hover:bg-[#009650] transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {isCreating ? (
                       <>

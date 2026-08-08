@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Edit, Trash2, Search, Loader2, X } from 'lucide-react';
+import { Eye, Edit, Trash2, Loader2, X } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import Pagination from '../components/common/Pagination';
 
@@ -12,6 +12,9 @@ const SiteCmsListPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const limit = 10;
 
@@ -43,6 +46,43 @@ const SiteCmsListPage: React.FC = () => {
     }
   };
 
+  const handleEditSubmit = async () => {
+    if (!editItem) return;
+    setIsSaving(true);
+    try {
+      const response = await apiClient.put(`v1/admin/site-cms/${editItem.id}`, {
+        title: editItem.title,
+        description: editItem.description,
+      });
+      if (response.data.success) {
+        setIsEditModalOpen(false);
+        fetchCmsPages();
+      } else {
+        alert(response.data.message || 'Failed to update CMS page');
+      }
+    } catch (err: any) {
+      console.error('Error updating CMS page:', err);
+      alert(err.response?.data?.message || 'An error occurred while updating');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this CMS page?')) return;
+    try {
+      const response = await apiClient.delete(`v1/admin/site-cms/${id}`);
+      if (response.data.success) {
+        fetchCmsPages();
+      } else {
+        alert(response.data.message || 'Failed to delete CMS page');
+      }
+    } catch (err: any) {
+      console.error('Error deleting CMS page:', err);
+      alert(err.response?.data?.message || 'An error occurred while deleting');
+    }
+  };
+
   // Strip HTML tags for description preview
   const stripHtml = (html: string) => {
     if (!html) return "";
@@ -65,15 +105,7 @@ const SiteCmsListPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Type to search..." 
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-              />
             </div>
-          </div>
         </div>
 
         {/* Table */}
@@ -131,10 +163,21 @@ const SiteCmsListPage: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Edit">
+                        <button 
+                          onClick={() => {
+                            setEditItem({ ...item });
+                            setIsEditModalOpen(true);
+                          }}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="Edit"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Delete">
+                        <button 
+                          onClick={() => handleDelete(item.id)}
+                          className="text-[#ef4444] rounded p-1 hover:bg-red-50 transition-colors" 
+                          title="Delete"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -209,6 +252,69 @@ const SiteCmsListPage: React.FC = () => {
                 className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+            <div className="relative p-5 border-b border-gray-200 bg-white rounded-t-xl shrink-0">
+              <h2 className="text-xl font-medium text-gray-800">Edit Site CMS</h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                disabled={isSaving}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+              <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                <h3 className="text-base font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">CMS Information</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Title</label>
+                    <input 
+                      type="text" 
+                      value={editItem.title}
+                      onChange={(e) => setEditItem({...editItem, title: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter title"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
+                    <textarea 
+                      value={editItem.description}
+                      onChange={(e) => setEditItem({...editItem, description: e.target.value})}
+                      rows={8}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter description content"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleEditSubmit}
+                disabled={isSaving}
+                className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[120px]"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
               </button>
             </div>
           </div>

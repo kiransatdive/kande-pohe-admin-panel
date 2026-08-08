@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Plus, Check, Star, Megaphone } from 'lucide-react';
+import { Edit, Trash2, Plus, Check, Star, Megaphone } from 'lucide-react';
 
 const SubscriptionManagementListPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

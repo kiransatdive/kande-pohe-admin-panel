@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Search, User, Loader2 } from 'lucide-react';
+import { Eye, User, Loader2 } from 'lucide-react';
 import Pagination from '../components/common/Pagination';
 import UserPhotosModal from '../components/common/UserPhotosModal';
 import apiClient from '../services/apiClient';
@@ -20,12 +20,12 @@ const UserListPhotoAlbumPage: React.FC = () => {
   const [users, setUsers] = useState<PhotoRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-
+  
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
 
@@ -122,20 +122,7 @@ const UserListPhotoAlbumPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Type to search all pages..." 
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  if (currentPage !== 1) setCurrentPage(1);
-                }}
-                className="w-64 bg-slate-50 border border-gray-200 text-gray-600 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
-              />
             </div>
-          </div>
         </div>
 
         {/* Table */}

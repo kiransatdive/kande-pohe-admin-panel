@@ -13,8 +13,21 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const location = useLocation();
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
+  React.useEffect(() => {
+    if (location.pathname.startsWith('/user-list')) {
+      setOpenDropdown('user-manage');
+    } else if (location.pathname.includes('/admin/site-manage/')) {
+      setOpenDropdown('site-manage-one');
+    } else if (location.pathname.includes('/admin/site-manage-two/')) {
+      setOpenDropdown('site-manage-two');
+    } else if (location.pathname.includes('/admin/cms/')) {
+      setOpenDropdown('cms');
+    }
+  }, [location.pathname]);
+
   const isAdminActive = location.pathname === '/admin' && openDropdown === null;
   const isDashboardActive = location.pathname === '/' && openDropdown === null;
 
