@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit, Trash2, Plus, Check, Star, Megaphone } from 'lucide-react';
+import { Edit, Trash2, Check, Star, Megaphone } from 'lucide-react';
 
 const SubscriptionManagementListPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,9 +133,8 @@ const SubscriptionManagementListPage: React.FC = () => {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-[#00b562] hover:bg-[#009b54] text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-sm"
+          className="bg-[#3b82f6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center shadow-sm"
         >
-          <Plus className="w-5 h-5" />
           Create Subscription
         </button>
       </div>
@@ -204,105 +203,107 @@ const SubscriptionManagementListPage: React.FC = () => {
 
       {/* Popup Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">Create Subscriptions</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-[15px] font-medium text-gray-800">
+                Create Subscription
+              </h2>
             </div>
             
             <div className="p-6 overflow-y-auto">
-              <form className="flex flex-col gap-5">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Subscriptions Name</label>
+              <form>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Subscriptions Name</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Subscriptions Price</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Subscriptions Price</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Price Without Discount</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Price Without Discount</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Discount [In Percentage]</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Discount [In Percentage]</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Profile Duration</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Profile Duration</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">No Of Contacts</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">No Of Contacts</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">No Of Personalized Messaging</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">No Of Personalized Messaging</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Privacy Settings</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Privacy Settings</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Validity Of Package</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Validity Of Package</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-800">Customer Care Support</label>
+                <div className="mb-8">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Customer Care Support</label>
                   <input 
                     type="text" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
 
-                <div className="pt-4 flex items-center gap-3">
+                <div className="flex items-center gap-3">
                   <button 
                     type="button" 
-                    className="bg-[#00b562] hover:bg-[#009b54] text-white px-6 py-2 rounded text-sm font-medium transition-colors"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded font-medium hover:bg-blue-700 transition-colors"
                   >
                     Create
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded text-sm font-medium transition-colors"
+                    className="bg-gray-100 text-gray-600 px-6 py-2.5 rounded font-medium hover:bg-gray-200 transition-colors"
                   >
                     Cancel
                   </button>

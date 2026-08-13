@@ -7,9 +7,10 @@ interface UserPhotosModalProps {
   isOpen: boolean;
   onClose: () => void;
   hideApprovalButtons?: boolean;
+  statusFilter?: string;
 }
 
-const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClose, hideApprovalButtons = false }) => {
+const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClose, hideApprovalButtons = false, statusFilter }) => {
   const [photos, setPhotos] = useState<any[]>([]);
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -231,11 +232,15 @@ const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClo
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {(() => {
-                const latestProfilePhotoId = photos.length > 0 
-                  ? Math.max(0, ...photos.filter((p: any) => p.Is_Profile_Photo === 'YES').map((p: any) => p.iPhoto_ID || 0)) 
+                const filteredPhotos = statusFilter 
+                  ? photos.filter((p: any) => p.eStatus?.toLowerCase() === statusFilter.toLowerCase())
+                  : photos;
+
+                const latestProfilePhotoId = filteredPhotos.length > 0 
+                  ? Math.max(0, ...filteredPhotos.filter((p: any) => p.Is_Profile_Photo === 'YES').map((p: any) => p.iPhoto_ID || 0)) 
                   : 0;
 
-                return photos.map((photo) => (
+                return filteredPhotos.map((photo: any) => (
                 <div key={photo.iPhoto_ID} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                   <div className="relative h-80 bg-gray-100/50 flex items-center justify-center overflow-hidden">
                     <img 

@@ -4,6 +4,7 @@ import Pagination from '../components/common/Pagination';
 import UserViewModal from '../components/common/UserViewModal';
 import UserPhotosModal from '../components/common/UserPhotosModal';
 import UserBioModal from '../components/common/UserBioModal';
+import CallNotesModal from '../components/common/CallNotesModal';
 import apiClient from '../services/apiClient';
 
 interface Community {
@@ -165,6 +166,9 @@ const UserListPendingApprovalPage: React.FC = () => {
 
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [selectedBioUserId, setSelectedBioUserId] = useState<number | null>(null);
+
+  const [isCallNotesModalOpen, setIsCallNotesModalOpen] = useState(false);
+  const [selectedCallNoteUserId, setSelectedCallNoteUserId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchCommunities();
@@ -733,7 +737,13 @@ const UserListPendingApprovalPage: React.FC = () => {
                     <td className="px-3 py-4 text-gray-600 text-center">0</td>
                     <td className="px-3 py-4 text-gray-600 text-center">0</td>
                     <td className="px-3 py-4 text-center">
-                      <button className="bg-gray-100 border border-gray-200 text-gray-600 px-3 py-1 rounded text-[10px] hover:bg-gray-200">
+                      <button 
+                        onClick={() => {
+                          setSelectedCallNoteUserId(user.id);
+                          setIsCallNotesModalOpen(true);
+                        }}
+                        className="bg-gray-100 border border-gray-200 text-gray-600 px-3 py-1 rounded text-[10px] hover:bg-gray-200"
+                      >
                         Notes
                       </button>
                     </td>
@@ -822,6 +832,12 @@ const UserListPendingApprovalPage: React.FC = () => {
         isOpen={isBioModalOpen}
         onClose={() => setIsBioModalOpen(false)}
         userId={selectedBioUserId || 0}
+      />
+
+      <CallNotesModal
+        isOpen={isCallNotesModalOpen}
+        onClose={() => setIsCallNotesModalOpen(false)}
+        userId={selectedCallNoteUserId || 0}
       />
 
       {/* Approve Confirmation Modal */}

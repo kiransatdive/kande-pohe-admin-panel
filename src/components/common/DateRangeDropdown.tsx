@@ -41,6 +41,7 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ value = '28', onC
   return (
     <div className="relative" ref={dropdownRef}>
       <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between gap-6 px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:shadow-md transition-all text-left min-w-[200px]"
       >
@@ -54,10 +55,11 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ value = '28', onC
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+4px)] w-[200px] bg-white border border-gray-100 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] py-2 z-50">
+        <div className="absolute right-0 top-[calc(100%+4px)] w-[200px] max-h-[250px] overflow-y-auto bg-white border border-gray-100 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] py-2 z-[60]">
           {showCustomForm ? (
             <div className="px-4 py-2">
               <button 
+                type="button"
                 className="text-[11px] font-bold text-gray-400 mb-3 flex items-center hover:text-gray-700 transition-colors"
                 onClick={() => setShowCustomForm(false)}
               >
@@ -72,29 +74,28 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ value = '28', onC
                   <input type="date" className="w-full border border-gray-200 rounded-md py-1.5 px-3 text-[12px] text-gray-700 focus:outline-none focus:border-blue-400 placeholder:text-gray-400 cursor-pointer" />
                 </div>
               </div>
-              <button className="w-full bg-[#00a3ff] hover:bg-[#0095e6] text-white text-[13px] font-semibold py-2 rounded-md transition-colors shadow-sm" onClick={() => setIsOpen(false)}>
+              <button type="button" className="w-full bg-[#00a3ff] hover:bg-[#0095e6] text-white text-[13px] font-semibold py-2 rounded-md transition-colors shadow-sm" onClick={() => setIsOpen(false)}>
                 Apply Range
               </button>
             </div>
           ) : (
             options.map((opt, i) => {
               if (opt.divider) {
-                return <div key={i} className="h-px bg-gray-100 my-1 w-full"></div>;
+                return <div key={i} className="h-px bg-gray-100 my-0.5 w-full"></div>;
               }
               return (
                 <button 
+                  type="button"
                   key={i}
                   onClick={() => {
-                    if (opt.value) {
-                      if (onChange) onChange(opt.value);
-                    }
                     if (opt.value === 'custom') {
                       setShowCustomForm(true);
                     } else {
+                      if (opt.value && onChange) onChange(opt.value);
                       setIsOpen(false);
                     }
                   }}
-                  className={`w-full text-left px-4 py-2 text-[13px] hover:bg-gray-50 transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-gray-50 transition-colors ${
                     value === opt.value && !showCustomForm ? 'bg-gray-50/80 text-gray-900 font-medium' : 'text-gray-600'
                   }`}
                 >

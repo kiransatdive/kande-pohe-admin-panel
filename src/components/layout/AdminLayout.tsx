@@ -11,7 +11,7 @@ const AdminLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+    <div className="flex h-[125vh] overflow-hidden bg-gray-50 font-sans">
       {/* Sidebar Wrapper for mobile responsiveness */}
       <div className={`
         fixed inset-y-0 left-0 z-50 transform 

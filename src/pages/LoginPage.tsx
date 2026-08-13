@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-gray-50 font-sans p-4 sm:p-8">
+    <div className="flex min-h-[125vh] w-full flex-col items-center justify-center bg-gray-50 font-sans p-4 sm:p-8">
       <div className="flex w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl min-h-[600px]">
         {/* Left Side - Graphic/Branding */}
         <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#e31e43] to-[#a81028] p-10 text-white lg:flex">

@@ -4,16 +4,26 @@ import Pagination from '../components/common/Pagination';
 import UserPhotosModal from '../components/common/UserPhotosModal';
 import apiClient from '../services/apiClient';
 
-interface PhotoRecord {
+interface Photo {
   iPhoto_ID: number;
+  File_Name: string;
+  Is_Profile_Photo: string;
+  eStatus: string;
+  dtCreated: string;
+}
+
+interface PhotoRecord {
   iUser_ID: number;
-  File_Name: string | null;
-  Is_Profile_Photo: string | null;
-  eStatus: string | null;
   dtCreated: string | null;
   First_Name: string | null;
   Last_Name: string | null;
   email: string | null;
+  Mobile: string | null;
+  Profile_created_for: string | null;
+  Gender: string | null;
+  DOB: string | null;
+  Time_of_Birth: string | null;
+  photos: Photo[];
 }
 
 const UserListPhotoAlbumPage: React.FC = () => {
@@ -93,12 +103,13 @@ const UserListPhotoAlbumPage: React.FC = () => {
   const filteredUsers = users.filter(user => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
+    const statusMatch = user.photos?.some(photo => (photo.eStatus || '').toLowerCase().includes(query));
     return (
       (user.iUser_ID?.toString() || '').includes(query) ||
       (user.First_Name || '').toLowerCase().includes(query) ||
       (user.Last_Name || '').toLowerCase().includes(query) ||
       (user.email || '').toLowerCase().includes(query) ||
-      (user.eStatus || '').toLowerCase().includes(query)
+      statusMatch
     );
   });
 
@@ -163,17 +174,20 @@ const UserListPhotoAlbumPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {(searchQuery ? filteredUsers.slice((currentPage - 1) * 10, currentPage * 10) : filteredUsers).map((user, index) => (
-                  <tr key={user.iPhoto_ID} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
+                {(searchQuery ? filteredUsers.slice((currentPage - 1) * 10, currentPage * 10) : filteredUsers).map((user, index) => {
+                  const displayPhoto = user.photos?.find(p => p.Is_Profile_Photo === 'YES') || user.photos?.[0];
+                  
+                  return (
+                  <tr key={user.iUser_ID} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3 text-gray-500">{(currentPage - 1) * 10 + index + 1}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{user.First_Name || 'N/A'}</td>
                     <td className="px-4 py-3 text-gray-700 font-medium">{user.Last_Name || 'N/A'}</td>
                     <td className="px-4 py-3 text-[#3b82f6] hover:underline cursor-pointer">{user.email || 'N/A'}</td>
                     <td className="px-4 py-3">
-                      {user.File_Name ? (
+                      {displayPhoto?.File_Name ? (
                         <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center border-2 border-gray-200 overflow-hidden">
                           <img 
-                            src={user.File_Name} 
+                            src={displayPhoto.File_Name} 
                             alt="Profile" 
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -196,12 +210,12 @@ const UserListPhotoAlbumPage: React.FC = () => {
                     <td className="px-4 py-3 text-gray-600">{formatDate(user.dtCreated)}</td>
                     <td className="px-4 py-3">
                       <span className={`text-[11px] font-medium px-4 py-1.5 rounded text-white ${
-                        user.eStatus?.toLowerCase() === 'approve' ? 'bg-[#00b562]' :
-                        user.eStatus?.toLowerCase() === 'pending' ? 'bg-amber-500' :
-                        user.eStatus?.toLowerCase() === 'reject' ? 'bg-red-500' :
+                        displayPhoto?.eStatus?.toLowerCase() === 'approve' ? 'bg-[#00b562]' :
+                        displayPhoto?.eStatus?.toLowerCase() === 'pending' ? 'bg-amber-500' :
+                        displayPhoto?.eStatus?.toLowerCase() === 'reject' ? 'bg-red-500' :
                         'bg-gray-400'
                       }`}>
-                        {user.eStatus || 'Unknown'}
+                        {displayPhoto?.eStatus || 'Unknown'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -219,7 +233,7 @@ const UserListPhotoAlbumPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           )}
@@ -239,6 +253,7 @@ const UserListPhotoAlbumPage: React.FC = () => {
         isOpen={isPhotosModalOpen}
         onClose={() => setIsPhotosModalOpen(false)}
         userId={selectedUserId || 0}
+        statusFilter="Pending"
       />
     </div>
   );

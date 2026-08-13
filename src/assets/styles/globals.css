@@ -29,6 +29,7 @@
 body {
   @apply bg-bg-offwhite text-text-body;
   font-family: 'Source Sans 3', sans-serif;
+  zoom: 80%; /* Scales down all panel pages to look like the requested layout at 100% zoom */
 }
 
 @layer utilities {
