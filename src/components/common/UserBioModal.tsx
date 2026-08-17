@@ -15,6 +15,11 @@ const UserBioModal: React.FC<UserBioModalProps> = ({ userId, isOpen, onClose, hi
   const [error, setError] = useState('');
   const [isBioHandling, setIsBioHandling] = useState(false);
   const [bioStatus, setBioStatus] = useState<string | null>(null);
+  const [actionModal, setActionModal] = useState<{
+    isOpen: boolean;
+    status: 'Approve' | 'Reject' | null;
+  }>({ isOpen: false, status: null });
+  const [commentAdmin, setCommentAdmin] = useState('');
 
   useEffect(() => {
     if (userData) {
@@ -22,15 +27,22 @@ const UserBioModal: React.FC<UserBioModalProps> = ({ userId, isOpen, onClose, hi
     }
   }, [userData]);
 
-  const handleBioStatusUpdate = async (status: 'Approve' | 'Reject') => {
+  const handleBioStatusUpdate = async () => {
+    const { status } = actionModal;
+    if (!status) return;
+
     setIsBioHandling(true);
     try {
       const actionPath = status === 'Approve' ? 'approve' : 'disapprove';
-      const response = await apiClient.patch(`v1/admin/about-yourself/${userId}/${actionPath}`, {}, {
+      const response = await apiClient.patch(`v1/admin/about-yourself/${userId}/${actionPath}`, {
+        commentInOwnWordsAdmin: commentAdmin
+      }, {
         headers: { 'bypass-tunnel-reminder': 'true' }
       });
       if (response.data?.success || response.status === 200 || response.status === 204) {
         setBioStatus(status);
+        setActionModal({ isOpen: false, status: null });
+        setCommentAdmin('');
       } else {
         alert(response.data?.message || `Failed to ${actionPath} bio`);
       }
@@ -244,7 +256,10 @@ const UserBioModal: React.FC<UserBioModalProps> = ({ userId, isOpen, onClose, hi
                 {!hideApprovalButtons && bioStatus === 'Pending' && (
                   <div className="flex gap-4 mt-6">
                     <button
-                      onClick={() => handleBioStatusUpdate('Approve')}
+                      onClick={() => {
+                        setActionModal({ isOpen: true, status: 'Approve' });
+                        setCommentAdmin('');
+                      }}
                       disabled={isBioHandling}
                       className="flex-1 bg-emerald-500 text-white py-2.5 rounded-lg font-semibold hover:bg-emerald-600 transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
                     >
@@ -252,7 +267,10 @@ const UserBioModal: React.FC<UserBioModalProps> = ({ userId, isOpen, onClose, hi
                       Approve Bio
                     </button>
                     <button
-                      onClick={() => handleBioStatusUpdate('Reject')}
+                      onClick={() => {
+                        setActionModal({ isOpen: true, status: 'Reject' });
+                        setCommentAdmin('');
+                      }}
                       disabled={isBioHandling}
                       className="flex-1 bg-red-500 text-white py-2.5 rounded-lg font-semibold hover:bg-red-600 transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
                     >
@@ -281,6 +299,46 @@ const UserBioModal: React.FC<UserBioModalProps> = ({ userId, isOpen, onClose, hi
           </button>
         </div>
       </div>
+
+      {/* Action Comment Modal */}
+      {actionModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className={`p-4 text-white font-semibold flex justify-between items-center ${actionModal.status === 'Approve' ? 'bg-emerald-500' : 'bg-red-500'}`}>
+              <span>{actionModal.status === 'Approve' ? 'Approve Bio' : 'Disapprove Bio'}</span>
+              <button onClick={() => setActionModal({ isOpen: false, status: null })} className="text-white hover:text-white/80 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Admin Comment (Optional)</label>
+              <textarea
+                value={commentAdmin}
+                onChange={(e) => setCommentAdmin(e.target.value)}
+                placeholder={actionModal.status === 'Approve' ? "e.g. Bio looks good" : "e.g. Bio contains inappropriate language"}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-y"
+              />
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setActionModal({ isOpen: false, status: null })}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                disabled={isBioHandling}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleBioStatusUpdate}
+                disabled={isBioHandling}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 ${actionModal.status === 'Approve' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'} disabled:opacity-50`}
+              >
+                {isBioHandling && <Loader2 className="w-4 h-4 animate-spin" />}
+                Confirm {actionModal.status === 'Reject' ? 'Disapprove' : 'Approve'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

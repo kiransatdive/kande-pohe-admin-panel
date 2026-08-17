@@ -55,6 +55,7 @@ import PhysicalStatusListPage from '../pages/PhysicalStatusListPage';
 import OtherMetaManagementListPage from '../pages/OtherMetaManagementListPage';
 import SiteCmsListPage from '../pages/SiteCmsListPage';
 import SubscriptionManagementListPage from '../pages/SubscriptionManagementListPage';
+import SubscriberListPage from '../pages/SubscriberListPage';
 import LoginPage from '../pages/LoginPage';
 
 const router = createBrowserRouter([
@@ -283,7 +284,12 @@ const router = createBrowserRouter([
         element: <SubscriptionManagementListPage />
       },
       {
+        path: 'admin/subscribers',
+        element: <SubscriberListPage />
+      },
+      {
         path: 'admin/site-manage-two/gotra',
+
         element: <GotraListPage />
       },
       {

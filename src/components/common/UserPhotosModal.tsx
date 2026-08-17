@@ -15,6 +15,14 @@ const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClo
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [actionModal, setActionModal] = useState<{
+    isOpen: boolean;
+    photoId: number | null;
+    status: string;
+  }>({ isOpen: false, photoId: null, status: '' });
+  const [commentAdmin, setCommentAdmin] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -46,10 +54,16 @@ const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClo
     }
   };
 
-  const handlePhotoStatusUpdate = async (photoId: number, status: string) => {
+  const handlePhotoStatusUpdate = async () => {
+    const { photoId, status } = actionModal;
+    if (!photoId) return;
+
+    setIsUpdating(true);
     try {
       const actionPath = status === 'Approved' ? 'approve' : 'disapprove';
-      const response = await apiClient.patch(`v1/admin/profile-photos/${photoId}/${actionPath}`, {}, {
+      const response = await apiClient.patch(`v1/admin/profile-photos/${photoId}/${actionPath}`, {
+        commentAdmin
+      }, {
         headers: { 'bypass-tunnel-reminder': 'true' }
       });
 
@@ -57,12 +71,16 @@ const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClo
         setPhotos(prevPhotos => prevPhotos.map(p => 
           p.iPhoto_ID === photoId ? { ...p, eStatus: status } : p
         ));
+        setActionModal({ isOpen: false, photoId: null, status: '' });
+        setCommentAdmin('');
       } else {
         alert(response.data?.message || 'Failed to update photo status');
       }
     } catch (err: any) {
       console.error('Error updating photo status:', err);
       alert(err.response?.data?.message || err.message || 'Failed to update photo status');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -288,14 +306,20 @@ const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClo
                     {!hideApprovalButtons && photo.eStatus === 'Pending' && (
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handlePhotoStatusUpdate(photo.iPhoto_ID, 'Approved')}
+                          onClick={() => {
+                            setActionModal({ isOpen: true, photoId: photo.iPhoto_ID, status: 'Approved' });
+                            setCommentAdmin('');
+                          }}
                           className="flex-1 bg-emerald-500 text-white py-1.5 rounded text-xs font-medium hover:bg-emerald-600 transition-colors flex justify-center items-center gap-1"
                           title="Approve Photo"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                         </button>
                         <button
-                          onClick={() => handlePhotoStatusUpdate(photo.iPhoto_ID, 'Rejected')}
+                          onClick={() => {
+                            setActionModal({ isOpen: true, photoId: photo.iPhoto_ID, status: 'Rejected' });
+                            setCommentAdmin('');
+                          }}
                           className="flex-1 bg-red-500 text-white py-1.5 rounded text-xs font-medium hover:bg-red-600 transition-colors flex justify-center items-center gap-1"
                           title="Disapprove Photo"
                         >
@@ -323,6 +347,46 @@ const UserPhotosModal: React.FC<UserPhotosModalProps> = ({ userId, isOpen, onClo
           </button>
         </div>
       </div>
+
+      {/* Action Comment Modal */}
+      {actionModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className={`p-4 text-white font-semibold flex justify-between items-center ${actionModal.status === 'Approved' ? 'bg-emerald-500' : 'bg-red-500'}`}>
+              <span>{actionModal.status === 'Approved' ? 'Approve Photo' : 'Disapprove Photo'}</span>
+              <button onClick={() => setActionModal({ isOpen: false, photoId: null, status: '' })} className="text-white hover:text-white/80 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Admin Comment (Optional)</label>
+              <textarea
+                value={commentAdmin}
+                onChange={(e) => setCommentAdmin(e.target.value)}
+                placeholder={actionModal.status === 'Approved' ? "e.g. Looks good" : "e.g. Photo is blurry or inappropriate"}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-y"
+              />
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setActionModal({ isOpen: false, photoId: null, status: '' })}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                disabled={isUpdating}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handlePhotoStatusUpdate}
+                disabled={isUpdating}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 ${actionModal.status === 'Approved' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'} disabled:opacity-50`}
+              >
+                {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
+                Confirm {actionModal.status === 'Rejected' ? 'Disapprove' : 'Approve'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

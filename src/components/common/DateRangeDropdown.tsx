@@ -39,15 +39,15 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ value = '28', onC
   ];
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-50" ref={dropdownRef}>
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-6 px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:shadow-md transition-all text-left min-w-[200px]"
+        className="flex items-center justify-between gap-4 px-3 py-1.5 rounded-lg bg-transparent hover:bg-gray-50 transition-all text-left min-w-[200px]"
       >
         <div className="flex flex-col">
-          <span className="text-[11px] text-gray-500 font-medium">July 11 - August 8, 2026</span>
-          <span className="text-[13px] font-medium text-gray-800 mt-0.5">
+          <span className="text-[11px] text-gray-500 font-medium leading-tight">July 11 - August 8, 2026</span>
+          <span className="text-[13px] font-medium text-gray-800 mt-0.5 leading-tight">
             {options.find(o => o.value === value)?.label || 'Last 28 days'}
           </span>
         </div>
@@ -55,7 +55,7 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ value = '28', onC
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+4px)] w-[200px] max-h-[250px] overflow-y-auto bg-white border border-gray-100 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] py-2 z-[60]">
+        <div className="absolute right-0 top-[calc(100%+4px)] w-[200px] max-h-[250px] overflow-y-auto bg-white border border-gray-100 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] py-1.5 z-[60] scrollbar-thin scrollbar-thumb-gray-400">
           {showCustomForm ? (
             <div className="px-4 py-2">
               <button 

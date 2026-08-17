@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Image as ImageIcon, CheckCircle2, Loader2, XCircle, FileText, AlertTriangle } from 'lucide-react';
+import { Eye, Image as ImageIcon, CheckCircle2, Loader2, XCircle, FileText, AlertTriangle, Check } from 'lucide-react';
 import Pagination from '../components/common/Pagination';
 import UserViewModal from '../components/common/UserViewModal';
 import UserPhotosModal from '../components/common/UserPhotosModal';
@@ -87,6 +87,10 @@ const UserListApprovedPage: React.FC = () => {
   const [isDisapproveModalOpen, setIsDisapproveModalOpen] = useState(false);
   const [userToDisapprove, setUserToDisapprove] = useState<number | null>(null);
   const [isDisapproving, setIsDisapproving] = useState(false);
+
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [userToApprove, setUserToApprove] = useState<number | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
 
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -210,6 +214,39 @@ const UserListApprovedPage: React.FC = () => {
       alert(err.response?.data?.message || err.message || 'Failed to disapprove user');
     } finally {
       setIsDisapproving(false);
+    }
+  };
+
+  const handleApproveClick = (id: number) => {
+    setUserToApprove(id);
+    setIsApproveModalOpen(true);
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!userToApprove) return;
+    
+    try {
+      setIsApproving(true);
+      const response = await apiClient.patch(`v1/admin/users/${userToApprove}/status`, {
+        action: 'approve'
+      }, {
+        headers: {
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+      
+      if (response.data?.success || response.status === 200 || response.status === 204) {
+        setIsApproveModalOpen(false);
+        setUserToApprove(null);
+        fetchUsers(currentPage, appliedFilters); // Refresh the list
+      } else {
+        alert(response.data?.message || 'Failed to approve user');
+      }
+    } catch (err: any) {
+      console.error('Error approving user:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to approve user');
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -364,6 +401,29 @@ const UserListApprovedPage: React.FC = () => {
   const formatIsoDate = (isoString: any) => {
     return formatDate(isoString);
   };
+
+  const formatStatus = (status: number | string | null) => {
+    if (status === 0 || status === '0') return 'Deleted';
+    if (status === 1 || status === '1') return 'Active';
+    if (status === 2 || status === '2') return 'Inactive';
+    if (status === 3 || status === '3' || status === 10 || status === '10') return 'Pending';
+    if (status === 4 || status === '4') return 'Disapproved';
+    if (status === 5 || status === '5') return 'Approved';
+    if (status === 6 || status === '6') return 'Blocked';
+    if (!status) return 'Unknown';
+    return String(status);
+  };
+  
+  const getStatusColor = (status: number | string | null) => {
+    if (status === 0 || status === '0') return 'bg-gray-600'; // Deleted
+    if (status === 1 || status === '1') return 'bg-[#00b562]'; // Active
+    if (status === 2 || status === '2') return 'bg-orange-500'; // Inactive
+    if (status === 3 || status === '3' || status === 10 || status === '10') return 'bg-amber-500'; // Pending
+    if (status === 4 || status === '4') return 'bg-red-500'; // Disapproved
+    if (status === 5 || status === '5') return 'bg-[#00b562]'; // Approved
+    if (status === 6 || status === '6') return 'bg-red-700'; // Blocked
+    return 'bg-[#00b562]'; // Default approved-like
+  }
 
   const filteredUsers = users.filter(user => {
     if (appliedFilters.firstName && !(user.First_Name || '').toLowerCase().includes(appliedFilters.firstName.toLowerCase())) return false;
@@ -734,8 +794,8 @@ const UserListApprovedPage: React.FC = () => {
                     <td className="px-3 py-4 text-gray-600">{formatIsoDate(user.LastLoginTime)}</td>
                     <td className="px-3 py-4 text-gray-600">{formatDate(user.created_at)}</td>
                     <td className="px-3 py-4">
-                      <span className="bg-[#00b562] text-white text-xs font-medium px-3 py-1.5 rounded inline-block min-w-[100px] text-center">
-                        Approved
+                      <span className={`text-white text-xs font-medium px-3 py-1.5 rounded inline-block min-w-[100px] text-center ${getStatusColor(user.status)}`}>
+                        {formatStatus(user.status) === 'Active' || formatStatus(user.status) === 'Approved' ? 'Approved' : formatStatus(user.status)}
                       </span>
                     </td>
                     <td className="px-3 py-4">
@@ -750,13 +810,23 @@ const UserListApprovedPage: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleDisapproveClick(user.id)}
-                          className="text-red-500 rounded p-1 hover:bg-red-50" 
-                          title="Disapprove"
-                        >
-                          <XCircle className="w-4 h-4" strokeWidth={2.5} />
-                        </button>
+                        {formatStatus(user.status) === 'Disapproved' || formatStatus(user.status) === 'Blocked' || formatStatus(user.status) === 'Deleted' ? (
+                          <button 
+                            onClick={() => handleApproveClick(user.id)}
+                            className="text-green-500 rounded p-1 hover:bg-green-50" 
+                            title="Approve"
+                          >
+                            <CheckCircle2 className="w-4 h-4" strokeWidth={2.5} />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleDisapproveClick(user.id)}
+                            className="text-red-500 rounded p-1 hover:bg-red-50" 
+                            title="Disapprove"
+                          >
+                            <XCircle className="w-4 h-4" strokeWidth={2.5} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => {
                             setSelectedUserForPhotosId(user.id);
@@ -793,6 +863,46 @@ const UserListApprovedPage: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Approve Confirmation Modal */}
+      {isApproveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
+                <Check className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">Approve User</h3>
+              <p className="text-sm text-center text-gray-500">
+                Are you sure you want to approve this user?
+              </p>
+            </div>
+            <div className="flex px-6 py-4 bg-gray-50 gap-3 justify-end">
+              <button
+                onClick={() => setIsApproveModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+                disabled={isApproving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApproveConfirm}
+                disabled={isApproving}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none disabled:opacity-50 flex items-center gap-2"
+              >
+                {isApproving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  'Approve User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Disapprove Confirmation Modal */}
       {isDisapproveModalOpen && (

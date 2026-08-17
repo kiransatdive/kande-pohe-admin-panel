@@ -31,7 +31,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   dailyValue,
   weeklyValue,
   monthlyValue,
-  footerSubtitle = 'No change in user count',
+  footerSubtitle,
   viewMode = 'total',
   onClick
 }) => {
@@ -130,15 +130,19 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
       </div>
 
       {/* Footer Block */}
-      <div className="bg-slate-50 border-t border-slate-100 p-2.5 px-4 flex items-center justify-between z-10 pl-5">
-         <div className="flex items-center gap-2">
-           <div className="w-5 h-5 rounded-md bg-blue-100/50 flex items-center justify-center text-blue-600">
-             <BarChart2 className="w-3 h-3" strokeWidth={2} />
+      {footerSubtitle ? (
+        <div className="bg-slate-50 border-t border-slate-100 p-2.5 px-4 flex items-center justify-between z-10 pl-5">
+           <div className="flex items-center gap-2">
+             <div className="w-5 h-5 rounded-md bg-blue-100/50 flex items-center justify-center text-blue-600">
+               <BarChart2 className="w-3 h-3" strokeWidth={2} />
+             </div>
+             <span className="text-[11px] font-medium text-slate-600">{footerSubtitle}</span>
            </div>
-           <span className="text-[11px] font-medium text-slate-600">{footerSubtitle}</span>
-         </div>
-         <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-      </div>
+           <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </div>
+      ) : (
+        <div className="h-[41px] w-full invisible"></div>
+      )}
 
     </div>
   );

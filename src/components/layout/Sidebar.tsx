@@ -119,6 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 
   const showSiteCms = match('site cms');
   const showSubscription = match('subscription management');
+  const showSubscribers = match('subscribers');
 
   return (
     <aside className={`${isOpen ? 'w-[320px]' : 'w-[72px]'} flex-shrink-0 bg-slate-900 text-slate-400 flex flex-col h-[125vh] overflow-y-auto overflow-x-hidden no-scrollbar font-sans transition-all duration-300 ease-in-out`}>
@@ -441,6 +442,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             <div className={`flex items-center gap-3 ${isOpen ? 'ml-2' : ''}`}>
               <RefreshCw className="w-5 h-5 flex-shrink-0 text-slate-200" />
               {isOpen && <span className="font-semibold whitespace-nowrap">Subscription Management</span>}
+            </div>
+          </NavLink>
+        )}
+
+        {showSubscribers && (
+          <NavLink to="/admin/subscribers" className={`w-full flex items-center px-2 py-2.5 text-sm text-slate-200 hover:bg-slate-800 rounded group transition-colors mt-2 ${!isOpen && 'justify-center'}`}>
+            <div className={`flex items-center gap-3 ${isOpen ? 'ml-2' : ''}`}>
+              <Users className="w-5 h-5 flex-shrink-0 text-slate-200" />
+              {isOpen && <span className="font-semibold whitespace-nowrap">Subscribers</span>}
             </div>
           </NavLink>
         )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import logo from '../assets/logo.png';
@@ -9,8 +9,17 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const savedAdminId = localStorage.getItem('savedAdminId');
+    if (savedAdminId) {
+      setAdminId(savedAdminId);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +43,12 @@ const LoginPage: React.FC = () => {
         if (data.data.admin.status && data.data.admin.status.toLowerCase() === 'inactive') {
           setError('Your account is inactive. Please contact an administrator.');
           return;
+        }
+
+        if (rememberMe) {
+          localStorage.setItem('savedAdminId', adminId);
+        } else {
+          localStorage.removeItem('savedAdminId');
         }
 
         localStorage.setItem('isAuthenticated', 'true');
@@ -162,6 +177,8 @@ const LoginPage: React.FC = () => {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 text-[#e31e43] focus:ring-[#e31e43]"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm font-medium text-gray-600">

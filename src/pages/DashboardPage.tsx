@@ -6,7 +6,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import DateRangeDropdown from '../components/common/DateRangeDropdown';
 import { getDashboardData } from '../services/dashboardService';
 import DashboardCard from '../components/dashboard/DashboardCard';
-import CardViewDropdown from '../components/dashboard/CardViewDropdown';
+
 import type { ViewMode } from '../components/dashboard/CardViewDropdown';
 
 const DashboardPage: React.FC = () => {
@@ -14,7 +14,8 @@ const DashboardPage: React.FC = () => {
 
   const [userAnalyticsRange, setUserAnalyticsRange] = useState('28');
   const [revenueRange, setRevenueRange] = useState('28');
-  const [globalViewMode, setGlobalViewMode] = useState<ViewMode>('total');
+  const [globalRange, setGlobalRange] = useState('lifetime');
+  const globalViewMode = (globalRange === '7' ? 'weekly' : globalRange === 'lifetime' ? 'total' : 'monthly') as ViewMode;
 
   const { data: uaData, isLoading: isLoadingUA, error: errorUA } = useQuery({
     queryKey: ['dashboardData', userAnalyticsRange],
@@ -48,8 +49,8 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 gap-4 text-sm">
-      <div className="flex justify-end">
-        <CardViewDropdown value={globalViewMode} onChange={setGlobalViewMode} />
+      <div className="flex justify-end relative z-50">
+        <DateRangeDropdown value={globalRange} onChange={setGlobalRange} />
       </div>
 
       {/* Summary Cards */}
@@ -137,7 +138,7 @@ const DashboardPage: React.FC = () => {
           monthlyValue={dashboard.subscribers?.monthly?.toLocaleString() || 0}
           footerSubtitle="Click to view subscribers"
           viewMode={globalViewMode}
-          onClick={() => navigate('/admin/subscription-management')} 
+          onClick={() => navigate('/admin/subscribers')} 
         />
         <DashboardCard 
           title="Revenue" 
@@ -145,10 +146,11 @@ const DashboardPage: React.FC = () => {
           subtitle="Total subscription revenue" 
           colorHex="#4b7bec" 
           icon={IndianRupee} 
+          dailyValue={`₹ ${dashboardRev.subscriptionRevenue?.daily?.toLocaleString() || 0}`}
+          weeklyValue={`₹ ${dashboardRev.subscriptionRevenue?.weekly?.toLocaleString() || 0}`}
+          monthlyValue={`₹ ${dashboardRev.subscriptionRevenue?.monthly?.toLocaleString() || 0}`}
           trendValue={`₹ ${dashboardRev.subscriptionRevenue?.monthly?.toLocaleString() || 0}`} 
-          footerSubtitle="Click to view revenue details"
           viewMode={globalViewMode}
-          onClick={() => navigate('/admin/subscription-management')} 
         />
       </div>
 
