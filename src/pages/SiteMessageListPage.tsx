@@ -1,34 +1,153 @@
-import React, { useState } from 'react';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Edit, Trash2, Loader2, X, Search } from 'lucide-react';
+import apiClient from '../services/apiClient';
+import Pagination from '../components/common/Pagination';
 
 const SiteMessageListPage: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  const items = [
-    { id: 1, action: 'ACCEPT_INTEREST', type: 'TITLE', value: 'Accept Interest', subject: 'For Accept Interest Title' },
-    { id: 2, action: 'ACCEPT_INTEREST', type: 'SUCESS', value: 'Interest request accepted successfully.', subject: 'Interest Request Accept For Success' },
-    { id: 3, action: 'ACCEPT_INTEREST', type: 'SUCESS', value: 'This user may have cancelled your interest request.', subject: 'Warning' },
-    { id: 4, action: 'ACCEPT_INTEREST', type: 'SUCESS', value: 'This user may have cancelled your interest request.', subject: 'Warning' },
-    { id: 5, action: 'ACCEPT_INTEREST', type: 'SUCESS', value: 'Already Interest Request Accepted.', subject: 'Warning' },
-    { id: 6, action: 'BLOCK_USER', type: 'TITLE', value: 'Block User', subject: 'For Block User Title' },
-    { id: 7, action: 'BLOCK_USER', type: 'SUCESS', value: '#NAME# Blocked Successfully.', subject: 'Success - Block User.' },
-    { id: 8, action: 'BLOCK_USER', type: 'ERROR', value: "You can't block user now. Please try again.", subject: 'Error - Block user Error.' },
-    { id: 9, action: 'BLOCK_USER', type: 'SUCESS', value: '#NAME# already blocked.', subject: 'Warning' },
-    { id: 10, action: 'CANCEL_INTEREST', type: 'TITLE', value: "Interest Request may be Accepted. So you can't cancel it.", subject: 'Warning' },
-    { id: 11, action: 'CANCEL_INTEREST', type: 'TITLE', value: "Interest Request may be Rejected. So you can't cancel it.", subject: 'Warning' },
-    { id: 12, action: 'CANCEL_INTEREST', type: 'SUCESS', value: 'Interest request already cancelled.', subject: 'Warning' },
-    { id: 13, action: 'CANCEL_INTEREST', type: 'SUCESS', value: 'This user may be accept or reject or block Interest request.', subject: 'Warning' },
-  ];
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const limit = 10;
+
+  const fetchSiteMessages = async (page: number = currentPage, currentSearch: string = searchQuery) => {
+    setIsLoading(true);
+    setError('');
+    const isSearching = currentSearch.trim().length > 0;
+    try {
+      const response = await apiClient.get(`v1/admin/site-messages`, {
+        params: { 
+          page: isSearching ? 1 : page, 
+          limit: isSearching ? 10000 : limit,
+          search: currentSearch 
+        },
+        headers: { 'bypass-tunnel-reminder': 'true' }
+      });
+
+      if (response.data.success) {
+        setItems(response.data.data);
+        if (!isSearching && response.data.meta) {
+          setTotalItems(response.data.meta.total);
+          setTotalPages(response.data.meta.totalPages);
+        } else {
+          setTotalItems(response.data.data.length);
+          setTotalPages(1);
+        }
+      } else {
+        setError(response.data.message || 'Failed to fetch site messages');
+      }
+    } catch (err: any) {
+      console.error('Error fetching site messages:', err);
+      setError(err.response?.data?.message || 'An error occurred while fetching site messages');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchSiteMessages(searchQuery ? 1 : currentPage, searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, searchQuery ? 1 : currentPage]);
+
+  const handleEditSubmit = async () => {
+    if (!editItem) return;
+    setIsSaving(true);
+    try {
+      const response = await apiClient.put(`v1/admin/site-messages/${editItem.id}`, {
+        message_action: editItem.message_action,
+        message_type: editItem.message_type,
+        message_value: editItem.message_value,
+        Subject: editItem.Subject,
+      });
+      if (response.data.success) {
+        setIsEditModalOpen(false);
+        fetchSiteMessages(currentPage, searchQuery);
+      } else {
+        alert(response.data.message || 'Failed to update site message');
+      }
+    } catch (err: any) {
+      console.error('Error updating site message:', err);
+      alert(err.response?.data?.message || 'An error occurred while updating');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this site message?')) return;
+    try {
+      const response = await apiClient.delete(`v1/admin/site-messages/${id}`);
+      if (response.data.success) {
+        fetchSiteMessages(currentPage, searchQuery);
+      } else {
+        alert(response.data.message || 'Failed to delete site message');
+      }
+    } catch (err: any) {
+      console.error('Error deleting site message:', err);
+      alert(err.response?.data?.message || 'An error occurred while deleting');
+    }
+  };
 
   const getBadgeClass = (type: string) => {
     switch (type) {
+      case 'T':
       case 'TITLE':
         return 'bg-[#007bff] text-white';
+      case 'S':
+      case 'SUCCESS':
       case 'SUCESS':
         return 'bg-[#00b562] text-white';
+      case 'E':
       case 'ERROR':
         return 'bg-[#d9534f] text-white';
       default:
         return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'T': return 'TITLE';
+      case 'S': return 'SUCCESS';
+      case 'E': return 'ERROR';
+      default: return type;
+    }
+  };
+
+  const filteredItems = items.filter(item => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const typeLabel = getTypeLabel(item.message_type).toLowerCase();
+    return (
+      (item.message_action || '').toLowerCase().includes(query) ||
+      typeLabel.includes(query) ||
+      (item.message_value || '').toLowerCase().includes(query) ||
+      (item.Subject || '').toLowerCase().includes(query) ||
+      (item.id?.toString() || '').includes(query)
+    );
+  });
+
+  const handlePageChange = (page: number) => {
+    if (searchQuery) {
+      const maxPage = Math.ceil(filteredItems.length / limit) || 1;
+      if (page >= 1 && page <= maxPage) {
+        setCurrentPage(page);
+      }
+    } else {
+      setCurrentPage(page);
     }
   };
 
@@ -37,15 +156,27 @@ const SiteMessageListPage: React.FC = () => {
       {/* Main Card */}
       <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mb-6 overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-col gap-2">
             <h2 className="text-[15px] font-medium text-gray-800">Site Messages List</h2>
             <div className="text-xs text-gray-500">
-              Showing 1-13 of <span className="font-semibold text-gray-800">126</span> items.
+              Showing {(currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, searchQuery ? filteredItems.length : totalItems || 0)} of <span className="font-semibold text-gray-800">{searchQuery ? filteredItems.length : totalItems || 0}</span> items.
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {/* The screenshot doesn't explicitly show a Create button, but typically there is one or we just omit if not needed. Let's keep it consistent. */}
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search messages..." 
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (currentPage !== 1) setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-sm rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+              />
+            </div>
           </div>
         </div>
 
@@ -63,38 +194,247 @@ const SiteMessageListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
-                  <td className="px-4 py-3 text-gray-500 align-top">{item.id}</td>
-                  <td className="px-4 py-3 text-gray-700 align-top">{item.action}</td>
-                  <td className="px-4 py-3 align-top">
-                    <span className={`px-3 py-1 rounded text-[11px] font-semibold tracking-wider ${getBadgeClass(item.type)}`}>
-                      {item.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 align-top">{item.value}</td>
-                  <td className="px-4 py-3 text-gray-600 align-top">{item.subject}</td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-center justify-end gap-1.5 text-gray-400">
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <div className="flex justify-center items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                      Loading site messages...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-red-500 bg-red-50/50 font-medium">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    No site messages found matching your search.
+                  </td>
+                </tr>
+              ) : (
+                (searchQuery ? filteredItems.slice((currentPage - 1) * limit, currentPage * limit) : filteredItems).map((item) => (
+                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-3 text-gray-500 align-top">{item.id}</td>
+                    <td className="px-4 py-3 text-gray-700 align-top font-medium">{item.message_action}</td>
+                    <td className="px-4 py-3 align-top">
+                      <span className={`px-3 py-1 rounded text-[11px] font-semibold tracking-wider ${getBadgeClass(item.message_type)}`}>
+                        {getTypeLabel(item.message_type)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[#3b82f6] align-top">{item.message_value}</td>
+                    <td className="px-4 py-3 text-gray-600 align-top">{item.Subject}</td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex items-center justify-end gap-1.5 text-gray-400">
+                        <button 
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setIsViewModalOpen(true);
+                          }}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setEditItem({ ...item });
+                            setIsEditModalOpen(true);
+                          }}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item.id)}
+                          className="text-[#ef4444] rounded p-1 hover:bg-red-50 transition-colors" 
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {!isLoading && (searchQuery ? filteredItems.length > 0 : items.length > 0) && (searchQuery ? Math.ceil(filteredItems.length / limit) : totalPages) > 1 && (
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+             <Pagination 
+               currentPage={currentPage}
+               totalPages={searchQuery ? Math.ceil(filteredItems.length / limit) || 1 : totalPages}
+               onPageChange={handlePageChange}
+               infoText={`Showing ${(currentPage - 1) * limit + 1} to ${Math.min(currentPage * limit, searchQuery ? filteredItems.length : totalItems)} of ${searchQuery ? filteredItems.length : totalItems} entries`}
+             />
+          </div>
+        )}
       </div>
+
+      {/* View Details Modal */}
+      {isViewModalOpen && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="relative p-5 border-b border-gray-200 bg-white rounded-t-xl shrink-0 text-center">
+              <h2 className="text-xl font-medium text-gray-800">Site Message Details</h2>
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto bg-white p-6">
+              <div className="border border-gray-200 rounded-sm overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <tbody>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Message Action
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {selectedItem.message_action}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Message Type
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {getTypeLabel(selectedItem.message_type)}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Message Value
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {selectedItem.message_value}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Subject
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {selectedItem.Subject}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex justify-end shrink-0">
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+            <div className="relative p-5 border-b border-gray-200 bg-white rounded-t-xl shrink-0">
+              <h2 className="text-xl font-medium text-gray-800">Edit Site Message</h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                disabled={isSaving}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+              <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                <h3 className="text-base font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">Message Information</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Message Action</label>
+                    <input 
+                      type="text" 
+                      value={editItem.message_action}
+                      onChange={(e) => setEditItem({...editItem, message_action: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter message action"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Message Type</label>
+                    <select 
+                      value={editItem.message_type}
+                      onChange={(e) => setEditItem({...editItem, message_type: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                    >
+                      <option value="T">TITLE</option>
+                      <option value="S">SUCCESS</option>
+                      <option value="E">ERROR</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Message Value</label>
+                    <textarea 
+                      value={editItem.message_value}
+                      onChange={(e) => setEditItem({...editItem, message_value: e.target.value})}
+                      rows={4}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter message value"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Subject</label>
+                    <input 
+                      type="text" 
+                      value={editItem.Subject}
+                      onChange={(e) => setEditItem({...editItem, Subject: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter subject"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleEditSubmit}
+                disabled={isSaving}
+                className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[120px]"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default SiteMessageListPage;
+

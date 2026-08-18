@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Edit, Trash2, Loader2, X } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import Pagination from '../components/common/Pagination';
+import { CKEditor } from 'ckeditor4-react';
 
 const SiteCmsListPage: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -261,7 +262,7 @@ const SiteCmsListPage: React.FC = () => {
       {/* Edit Modal */}
       {isEditModalOpen && editItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
             <div className="relative p-5 border-b border-gray-200 bg-white rounded-t-xl shrink-0">
               <h2 className="text-xl font-medium text-gray-800">Edit Site CMS</h2>
               <button 
@@ -289,13 +290,13 @@ const SiteCmsListPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
-                    <textarea 
-                      value={editItem.description}
-                      onChange={(e) => setEditItem({...editItem, description: e.target.value})}
-                      rows={8}
-                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
-                      placeholder="Enter description content"
-                    />
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <CKEditor
+                        initData={editItem.description}
+                        editorUrl="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"
+                        onChange={(evt: any) => setEditItem({...editItem, description: evt.editor.getData()})}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

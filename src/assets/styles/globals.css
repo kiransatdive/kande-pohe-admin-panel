@@ -41,3 +41,8 @@ body {
     scrollbar-width: none;
   }
 }
+
+/* Fix Tailwind CSS border reset for CKEditor 4 toolbar buttons */
+.cke_reset_all * {
+  border-width: initial;
+}

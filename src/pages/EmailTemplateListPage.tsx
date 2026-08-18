@@ -1,81 +1,168 @@
-import React, { useState } from 'react';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Edit, Trash2, Loader2, X, Search } from 'lucide-react';
+import apiClient from '../services/apiClient';
+import Pagination from '../components/common/Pagination';
+import { CKEditor } from 'ckeditor4-react';
 
 const EmailTemplateListPage: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  const items = [
-    { 
-      id: 1, 
-      title: 'Register Verification Email', 
-      type: 'VERIFY_ACCOUNT', 
-      subject: 'Registration Link - Kande-Pohe Marathi Matrimony',
-      desc: "Dear #NAME#, You've entered #EMAIL_TO# as an email address for your registration at Kande-Pohe Marathi Matrimony. Use below link to continue with your registration if you leave registration incomplete. Copy and paste the below URL in a new browser window and hit enter. #ACTIVATION_LINK# Thank You ! Regards, Team Kande-Pohe Marathi Matrimony"
-    },
-    { 
-      id: 2, 
-      title: 'Email Verification PIN', 
-      type: 'EMAIL_VERIFICATION_PIN', 
-      subject: 'Email PIN for Account Verification - Kande-Pohe Marathi Matrimony',
-      desc: "Dear #NAME#, Please use below 4 digit email PIN to verify your registration at Kande-Pohe Marathi Matrimony. PIN is valid for #MINUTES# minutes and usable only once. PIN : #PIN# Expires in: #MINUTES# minutes. Regards, Team Kande-Pohe Marathi Matrimony"
-    },
-    { 
-      id: 3, 
-      title: 'In Own Words Approve', 
-      type: 'IN_OWN_WORDS_APPROVE', 
-      subject: "Kande-Pohe Marathi Matrimony - Description for 'About Yourself' section is approved",
-      desc: "Dear #NAME#, We have approved description for 'About Yourself' section. Now it is visible to all other verified users. #COMMENT# Thank You ! Regards, Team Kande-Pohe Marathi Matrimony"
-    },
-    { 
-      id: 4, 
-      title: 'Profile Photo Approve', 
-      type: 'PROFILE_PHOTO_APPROVE', 
-      subject: 'Your profile picture approved on Kande-Pohe Marathi Matrimony',
-      desc: "Dear #NAME#, We have approved your profile picture. Now it is visible to all other verified users. #COMMENT# PHOTO : #PHOTO# You can login and change the profile pic anytime you want or upload new. Regards, Team Kande-Pohe Marathi Matrimony"
-    },
-    { 
-      id: 5, 
-      title: 'In Own Words DisApprove', 
-      type: 'IN_OWN_WORDS_DISAPPROVE', 
-      subject: "Dis-approved 'About Yourself' on Kande-Pohe.com",
-      desc: "Dear #NAME#, We could not approve the description you provided for section 'About Yourself' as it is not matching with our content policies. Please correct it and re-submit. Generally, we do not approve content if there is abusive language used, contact details mentioned in it or hate speech mentioned about any individual/religion/country. Your Description: #CONTENT# Reason for dis-approval: #COMMENT# Thank You! Regards, Team Kande-Pohe Marathi..."
-    },
-    { 
-      id: 6, 
-      title: 'Profile Photo DisApprove', 
-      type: 'PROFILE_PHOTO_DISAPPROVE', 
-      subject: 'Regarding your profile picture on Kande-pohe.com',
-      desc: "Dear #NAME#, We could not approve your below picture because it is not appropriate as per our policies. Please upload new appropriate picture. Reason : #COMMENT# Photo : #PHOTO# Thank You ! Team Kande-Pohe Marathi Matrimony"
-    },
-    { 
-      id: 7, 
-      title: 'Forgot Password', 
-      type: 'FORGOT_PASSWORD', 
-      subject: '#NAME#, here is your link to reset password',
-      desc: "Dear #NAME#, To reset your password, please click on below link or copy and paste below URL in browser's address bar. #LINK# Thank You! Regards, Team Kande Pohe Marathi Matrimony"
-    },
-    { 
-      id: 8, 
-      title: 'User Deleted their profile on Kande Pohe', 
-      type: 'ADMIN_DELETE_ACCOUNT_USER', 
-      subject: 'User Deleted Their Profile.',
-      desc: "Dear Administrator, #NAME# deleted their profile on Kande-pohe.com. Here is their email id #EMAIL_TO#. Click on below URL for showing #NAME# profile. #LINK# Thank You ! Kande Pohe"
-    },
-  ];
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const limit = 10;
+
+  const fetchEmailFormats = async (page: number = currentPage, currentSearch: string = searchQuery) => {
+    setIsLoading(true);
+    setError('');
+    const isSearching = currentSearch.trim().length > 0;
+    try {
+      const response = await apiClient.get(`v1/admin/email-formats`, {
+        params: { 
+          page: isSearching ? 1 : page, 
+          limit: isSearching ? 10000 : limit,
+          search: currentSearch 
+        },
+        headers: { 'bypass-tunnel-reminder': 'true' }
+      });
+
+      if (response.data.success) {
+        setItems(response.data.data);
+        if (!isSearching && response.data.total !== undefined) {
+          setTotalItems(response.data.total);
+          setTotalPages(Math.ceil(response.data.total / limit));
+        } else if (!isSearching && response.data.meta) {
+          setTotalItems(response.data.meta.total);
+          setTotalPages(response.data.meta.totalPages);
+        } else {
+          setTotalItems(response.data.data.length);
+          setTotalPages(1);
+        }
+      } else {
+        setError(response.data.message || 'Failed to fetch email formats');
+      }
+    } catch (err: any) {
+      console.error('Error fetching email formats:', err);
+      setError(err.response?.data?.message || 'An error occurred while fetching email formats');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchEmailFormats(searchQuery ? 1 : currentPage, searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, searchQuery ? 1 : currentPage]);
+
+  const stripHtml = (html: string) => {
+    if (!html) return "";
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    const text = tmp.textContent || tmp.innerText || "";
+    return text.substring(0, 80) + (text.length > 80 ? "..." : "");
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editItem) return;
+    setIsSaving(true);
+    try {
+      const response = await apiClient.put(`v1/admin/email-formats/${editItem.iEmailFormatId}`, {
+        vEmailFormatTitle: editItem.vEmailFormatTitle,
+        vEmailFormatType: editItem.vEmailFormatType,
+        vEmailFormatSubject: editItem.vEmailFormatSubject,
+        tEmailFormatDesc: editItem.tEmailFormatDesc,
+      });
+      if (response.data.success) {
+        setIsEditModalOpen(false);
+        fetchEmailFormats(currentPage, searchQuery);
+      } else {
+        alert(response.data.message || 'Failed to update email format');
+      }
+    } catch (err: any) {
+      console.error('Error updating email format:', err);
+      alert(err.response?.data?.message || 'An error occurred while updating');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this email format?')) return;
+    try {
+      const response = await apiClient.delete(`v1/admin/email-formats/${id}`);
+      if (response.data.success) {
+        fetchEmailFormats(currentPage, searchQuery);
+      } else {
+        alert(response.data.message || 'Failed to delete email format');
+      }
+    } catch (err: any) {
+      console.error('Error deleting email format:', err);
+      alert(err.response?.data?.message || 'An error occurred while deleting');
+    }
+  };
+
+  const filteredItems = items.filter(item => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      (item.vEmailFormatTitle || '').toLowerCase().includes(query) ||
+      (item.vEmailFormatType || '').toLowerCase().includes(query) ||
+      (item.vEmailFormatSubject || '').toLowerCase().includes(query) ||
+      (item.tEmailFormatDesc || '').toLowerCase().includes(query) ||
+      (item.iEmailFormatId?.toString() || '').includes(query)
+    );
+  });
+
+  const handlePageChange = (page: number) => {
+    if (searchQuery) {
+      const maxPage = Math.ceil(filteredItems.length / limit) || 1;
+      if (page >= 1 && page <= maxPage) {
+        setCurrentPage(page);
+      }
+    } else {
+      setCurrentPage(page);
+    }
+  };
 
   return (
     <div className="flex flex-col text-sm w-full relative">
       {/* Main Card */}
       <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mb-6 overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-col gap-2">
             <h2 className="text-[15px] font-medium text-gray-800">Email Format List</h2>
             <div className="text-xs text-gray-500">
-              Showing 1-8 of <span className="font-semibold text-gray-800">26</span> items.
+              Showing {(currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, searchQuery ? filteredItems.length : totalItems || 0)} of <span className="font-semibold text-gray-800">{searchQuery ? filteredItems.length : totalItems || 0}</span> items.
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search templates..." 
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (currentPage !== 1) setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 bg-slate-50 border border-gray-200 text-gray-700 text-sm rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+              />
             </div>
+          </div>
         </div>
 
         {/* Table */}
@@ -92,32 +179,243 @@ const EmailTemplateListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
-                  <td className="px-4 py-3 text-gray-500 align-top">{item.id}</td>
-                  <td className="px-4 py-3 text-[#3b82f6] align-top">{item.title}</td>
-                  <td className="px-4 py-3 text-gray-700 align-top">{item.type}</td>
-                  <td className="px-4 py-3 text-[#3b82f6] align-top">{item.subject}</td>
-                  <td className="px-4 py-3 text-gray-600 align-top leading-relaxed">{item.desc}</td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-center justify-end gap-1.5 text-gray-400">
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <div className="flex justify-center items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                      Loading email formats...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-red-500 bg-red-50/50 font-medium">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    No email formats found matching your search.
+                  </td>
+                </tr>
+              ) : (
+                (searchQuery ? filteredItems.slice((currentPage - 1) * limit, currentPage * limit) : filteredItems).map((item) => (
+                  <tr key={item.iEmailFormatId} className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-3 text-gray-500 align-top">{item.iEmailFormatId}</td>
+                    <td className="px-4 py-3 text-[#3b82f6] align-top font-medium">{item.vEmailFormatTitle}</td>
+                    <td className="px-4 py-3 text-gray-700 align-top break-all">{item.vEmailFormatType}</td>
+                    <td className="px-4 py-3 text-[#3b82f6] align-top">{item.vEmailFormatSubject}</td>
+                    <td className="px-4 py-3 text-gray-600 align-top leading-relaxed">
+                      <div className="truncate" title={stripHtml(item.tEmailFormatDesc)}>
+                        {stripHtml(item.tEmailFormatDesc)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex items-center justify-end gap-1.5 text-gray-400">
+                        <button 
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setIsViewModalOpen(true);
+                          }}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setEditItem({ ...item });
+                            setIsEditModalOpen(true);
+                          }}
+                          className="text-[#3b82f6] rounded p-1 hover:bg-blue-50 transition-colors" 
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item.iEmailFormatId)}
+                          className="text-[#ef4444] rounded p-1 hover:bg-red-50 transition-colors" 
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {!isLoading && (searchQuery ? filteredItems.length > 0 : items.length > 0) && (searchQuery ? Math.ceil(filteredItems.length / limit) : totalPages) > 1 && (
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+             <Pagination 
+               currentPage={currentPage}
+               totalPages={searchQuery ? Math.ceil(filteredItems.length / limit) || 1 : totalPages}
+               onPageChange={handlePageChange}
+               infoText={`Showing ${(currentPage - 1) * limit + 1} to ${Math.min(currentPage * limit, searchQuery ? filteredItems.length : totalItems)} of ${searchQuery ? filteredItems.length : totalItems} entries`}
+             />
+          </div>
+        )}
       </div>
+
+      {/* View Details Modal */}
+      {isViewModalOpen && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="relative p-5 border-b border-gray-200 bg-white rounded-t-xl shrink-0 text-center">
+              <h2 className="text-xl font-medium text-gray-800">Email Format Details</h2>
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto bg-white p-6">
+              <div className="border border-gray-200 rounded-sm overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <tbody>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Email Format Title
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {selectedItem.vEmailFormatTitle}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Email Format Type
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {selectedItem.vEmailFormatType}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Email Format Subject
+                      </th>
+                      <td className="p-4 text-gray-700">
+                        {selectedItem.vEmailFormatSubject}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th className="w-48 bg-gray-50/50 p-4 font-bold text-gray-800 border-r border-gray-200 align-top">
+                        Email Format Desc
+                      </th>
+                      <td 
+                        className="p-4 text-gray-700 prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: selectedItem.tEmailFormatDesc }}
+                      />
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex justify-end shrink-0">
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
+            <div className="relative p-5 border-b border-gray-200 bg-white rounded-t-xl shrink-0">
+              <h2 className="text-xl font-medium text-gray-800">Edit Email Format</h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                disabled={isSaving}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+              <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                <h3 className="text-base font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">Format Information</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Format Title</label>
+                    <input 
+                      type="text" 
+                      value={editItem.vEmailFormatTitle}
+                      onChange={(e) => setEditItem({...editItem, vEmailFormatTitle: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter title"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Format Type</label>
+                    <input 
+                      type="text" 
+                      value={editItem.vEmailFormatType}
+                      onChange={(e) => setEditItem({...editItem, vEmailFormatType: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter format type"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Format Subject</label>
+                    <input 
+                      type="text" 
+                      value={editItem.vEmailFormatSubject}
+                      onChange={(e) => setEditItem({...editItem, vEmailFormatSubject: e.target.value})}
+                      className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all bg-white"
+                      placeholder="Enter subject"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Format Desc (HTML Support)</label>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <CKEditor
+                        initData={editItem.tEmailFormatDesc}
+                        editorUrl="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"
+                        onChange={(evt: any) => setEditItem({...editItem, tEmailFormatDesc: evt.editor.getData()})}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleEditSubmit}
+                disabled={isSaving}
+                className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[120px]"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
