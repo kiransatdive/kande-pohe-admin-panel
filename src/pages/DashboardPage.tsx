@@ -48,8 +48,8 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col flex-1 gap-4 text-sm">
-      <div className="flex justify-end relative z-50">
+    <div className="flex flex-col flex-1 gap-4 text-sm h-full max-h-full overflow-hidden pb-2">
+      <div className="flex justify-end relative z-20">
         <DateRangeDropdown value={globalRange} onChange={setGlobalRange} />
       </div>
 
@@ -155,7 +155,7 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Main Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-[280px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
         
         {/* User Analytics Card */}
         <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-4 flex flex-col">
@@ -180,7 +180,7 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative w-full flex-1 min-h-[200px]">
+          <div className="relative w-full flex-1 min-h-0">
              {!dashboard.userAnalytics || dashboard.userAnalytics.length === 0 ? (
                <div className="absolute inset-0 flex flex-col justify-center items-center text-gray-400">
                  <Users className="w-8 h-8 mb-2 opacity-20" />
@@ -256,7 +256,7 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative w-full flex-1 min-h-[200px] mt-auto">
+          <div className="relative w-full flex-1 min-h-0 mt-auto">
              {!dashboardRev.subscriptionRevenueAnalytics || dashboardRev.subscriptionRevenueAnalytics.length === 0 ? (
                <div className="absolute inset-0 flex flex-col justify-center items-center text-gray-400">
                  <IndianRupee className="w-8 h-8 mb-2 opacity-20" />

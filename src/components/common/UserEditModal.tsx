@@ -883,7 +883,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                           {isUploadingPhoto && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
                         </div>
                       </div>
-                      <SelectField
+                      {/* <SelectField
                         label="Status"
                         name="status"
                         value={formData.status}
@@ -898,7 +898,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ userId, isOpen, onClose, 
                           { label: 'Blocked', value: 6 },
                           { label: 'Pending (Alternative)', value: 10 }
                         ]}
-                      />
+                      /> */}
                       <SelectField
                         label="Gender"
                         name="Gender"

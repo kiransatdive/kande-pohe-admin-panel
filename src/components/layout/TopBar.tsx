@@ -269,72 +269,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar }) => {
           )}
         </div>
 
-        {/* Messages */}
-        <div className="relative">
-          <button 
-            onClick={() => {
-              setIsMessageOpen(!isMessageOpen);
-              setIsNotificationOpen(false);
-              setIsProfilePopupOpen(false);
-            }}
-            className="relative p-1 hover:text-gray-700 transition-colors focus:outline-none"
-          >
-            <MessageSquare className="w-5 h-5" />
-          </button>
 
-          {isMessageOpen && (
-            <div className="absolute right-0 md:-right-8 top-12 w-[380px] bg-white border border-gray-100 rounded-xl shadow-2xl z-50 text-left overflow-hidden">
-              {/* Search Bar */}
-              <div className="p-3 border-b border-gray-50/50">
-                <input 
-                  type="text" 
-                  placeholder="Search...." 
-                  className="w-full bg-gray-50/80 border border-gray-100/50 text-sm text-gray-700 placeholder-gray-400 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-gray-200"
-                />
-              </div>
-
-              {/* Message List */}
-              <div className="max-h-[460px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="flex flex-col">
-                  {messagesData.map((msg, index) => (
-                    <React.Fragment key={msg.id}>
-                      {index === 0 && (
-                        <h3 className="text-[13px] font-semibold text-gray-800 px-5 pt-3 pb-1 border-b border-gray-50/50">Today</h3>
-                      )}
-                      {index === 2 && (
-                        <h3 className="text-[13px] font-semibold text-gray-800 px-5 pt-4 pb-1 border-b border-gray-50/50">Yesterday</h3>
-                      )}
-                      <div className={`flex gap-3 px-5 py-4 cursor-pointer transition-colors border-b border-gray-50 last:border-0 ${msg.active ? 'bg-gray-50/80' : 'hover:bg-gray-50/50'}`}>
-                        <img src={msg.avatar} alt={msg.name} className="w-9 h-9 rounded-full border border-gray-200 object-cover flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-0.5">
-                            <span className="text-[13px] font-medium text-gray-700">{msg.name}</span>
-                            <div className="flex gap-2 text-gray-400">
-                              {msg.hasAttachment && <Paperclip className="w-3.5 h-3.5" />}
-                              {msg.hasStar && <Star className="w-3.5 h-3.5 text-yellow-400" />}
-                            </div>
-                          </div>
-                          <h4 className="text-[13px] font-semibold text-gray-800 leading-snug truncate mb-1">
-                            {msg.title}
-                          </h4>
-                          <p className="text-[12px] text-gray-500 leading-snug line-clamp-2 mb-3">
-                            {msg.desc}
-                          </p>
-                          <div className="flex items-center gap-1.5 text-gray-400">
-                            <CalendarDays className="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-medium">{msg.date}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-       
 
         {/* Profile Popover (Right Side) */}
         <div className="relative">
